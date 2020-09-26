@@ -1,0 +1,3 @@
+[submodule "bb-commons"]
+	path = bb-commons
+	url = git@github.com:james-hu/bb-commons.git
