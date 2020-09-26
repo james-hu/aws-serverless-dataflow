@@ -20,20 +20,71 @@
 
 <body>
     <p>AWS Serverless Dataflow Diagram</p>
-
+    <div>
+        <label>
+          <input type="checkbox" id="hideOrphan" name="hideOrphan" value="hideOrphan" checked />
+          Hide orphan nodes
+        </label>
+    </div>
     <div id="serverless-network"></div>
 
     <script type="text/javascript">
+        var hideOrphan = true;
+
         var nodes = new vis.DataSet(nodesArray);
         var edges = new vis.DataSet(edgesArray);
 
+        var nodesView = new vis.DataView(nodes, {
+            filter: function(node) {
+                if (!hideOrphan) {
+                    return true;
+                }
+                connEdges = edges.get({
+                    filter: function(edge) {
+                        return(
+                            (edge.to == node.id) || (edge.from == node.id));
+                    }});
+                return connEdges.length > 0;
+            }
+        });
         var container = document.getElementById("serverless-network");
         var data = {
-            nodes: nodes,
+            nodes: nodesView,
             edges: edges,
         };
-        var options = {};
+        var options = {
+            nodes: {
+                shape: 'circularImage',
+                imagePadding: 10,
+                shadow: true,
+                color: {border: '#f2f2f2'},
+            },
+            groups: {
+                SnsTopic: {
+                    image: 'img/SNS_Topic.svg',
+                    color:{background:'#f2e97e'}
+                },
+                SqsQueue: {
+                    image: 'img/SQS_Queue.svg',
+                    color:{background:'#cff7b5'}
+                },
+                LambdaFunction: {
+                    image: 'img/Lambda_Function.svg',
+                    color:{background:'#f7e5c6'}
+                }
+            },
+            edges: {
+                color: {
+                    inherit: false,
+                },
+            }
+        };
         var network = new vis.Network(container, data, options);
+
+        document.getElementById("hideOrphan").addEventListener("change", function(e) {
+            hideOrphan = e.target.checked;
+            nodesView.refresh();
+        })
     </script>
 </body>
 

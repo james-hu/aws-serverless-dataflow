@@ -1,11 +1,20 @@
-import parseArn from '@unbounce/parse-aws-arn';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { AwsUtils } from '../bb-commons/typescript';
 import { Context } from './context';
 
 interface Node {
     id: string,
     label: string,
+    group?: Group,
+    [others: string]: any,
+}
+
+interface Edge {
+    from: string,
+    to: string,
+    arrows?: Arrows,
+    relation?: Relation,
     [others: string]: any,
 }
 
@@ -20,12 +29,10 @@ enum Relation {
     Subscriber,
 }
 
-interface Edge {
-    from: string,
-    to: string,
-    arrows?: Arrows,
-    relation?: Relation,
-    [others: string]: any,
+enum Group {
+    SnsTopic = 'SnsTopic',
+    SqsQueue = 'SqsQueue',
+    LambdaFunction = 'LambdaFunction',
 }
 
 export class Generator {
@@ -37,6 +44,7 @@ export class Generator {
 
         return Promise.all([
             fs.copy('src/index.html', path.join(dir, 'index.html')),
+            fs.copy('img', path.join(dir, 'img')),
             fs.writeFile(path.join(dir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify(this.generateNodes(), null, 2)),
             fs.writeFile(path.join(dir, 'edges.js'), 'var edgesArray = ' + JSON.stringify(this.generateEdges(), null, 2)),
         ]);
@@ -46,23 +54,31 @@ export class Generator {
         const inventory = this.context.inventory;
         const nodes = new Map<string, Node>();
 
-        for (let sub of inventory.snsSubscriptionsByArn.values()) {
-            const topicArnObj = parseArn(sub.TopicArn);
-            // const topic = inventory.snsTopicsByArn.get(sub.TopicArn);
-            nodes.set(sub.TopicArn, {
-                id: sub.TopicArn,
-                label: `${topicArnObj.service}:${topicArnObj.resource}`,
+        for (let topic of inventory.snsTopicsByArn.values()) {
+            const topicArn = AwsUtils.parseArn(topic.TopicArn)!;
+            nodes.set(topicArn.arn, {
+                id: topicArn.arn,
+                label: `topic:${topicArn.resource}`,
+                group: Group.SnsTopic,
             });
-            // https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html
-            const endpoint = sub.Endpoint;
-            const queue = inventory.sqsQueuesByArn.get(endpoint);
-            if (queue) {
-                const queueArnObj = parseArn(endpoint);
-                nodes.set(endpoint, {
-                    id: endpoint,
-                    label: `${queueArnObj.service}:${queueArnObj.resource}`,
-                });
-            }
+        }
+
+        for (let queue of inventory.sqsQueuesByArn.values()) {
+            const queueArn = AwsUtils.parseArn(queue.QueueArn)!;
+            nodes.set(queueArn.arn, {
+                id: queueArn.arn,
+                label: `queue:${queueArn.resource}`,
+                group: Group.SqsQueue,
+            });
+        }
+
+        for (let lambda of inventory.lambdaFunctionsByArn.values()) {
+            const lambdaArn = AwsUtils.parseArn(lambda.FunctionArn)!;
+            nodes.set(lambdaArn.arn, {
+                id: lambdaArn.arn,
+                label: `${lambdaArn.resource}`,
+                group: Group.LambdaFunction,
+            });
         }
 
         return [...nodes.values()];
@@ -73,16 +89,38 @@ export class Generator {
         const edges = new Map<string, Edge>();
 
         for (let sub of inventory.snsSubscriptionsByArn.values()) {
-            const id = `${sub.Endpoint}->${sub.TopicArn}`;
+            const id = `${sub.TopicArn}->${sub.Endpoint}`;
             // https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html
             const endpoint = sub.Endpoint;
             const queue = inventory.sqsQueuesByArn.get(endpoint);
             if (queue) {
                 edges.set(id, {
-                    to: sub.TopicArn,
-                    from: sub.Endpoint,
+                    from: sub.TopicArn,
+                    to: sub.Endpoint,
                     arrows: Arrows.To,
                 });
+            }
+        }
+
+        for (let lambda of inventory.lambdaFunctionsByArn.values()) {
+            const lambdaArn = AwsUtils.parseArn(lambda.FunctionArn)!;
+            for (let mapping of lambda.eventSourceMappings) {
+                if (mapping.snsTopic) {
+                    const id = `${mapping.snsTopic.TopicArn}->${lambdaArn.arn}`;
+                    edges.set(id, {
+                        from: mapping.snsTopic.TopicArn,
+                        to: lambdaArn.arn,
+                        arrows: Arrows.To,
+                    });
+                }
+                if (mapping.sqsQueue) {
+                    const id = `${mapping.sqsQueue.QueueArn}->${lambdaArn.arn}`;
+                    edges.set(id, {
+                        from: mapping.sqsQueue.QueueArn,
+                        to: lambdaArn.arn,
+                        arrows: Arrows.To,
+                    });
+                }
             }
         }
 

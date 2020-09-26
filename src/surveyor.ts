@@ -147,8 +147,9 @@ export class Surveyor {
             const eventSourceMappings = await AwsUtils.repeatFetchingItemsByMarker<Lambda.EventSourceMappingConfiguration>('EventSourceMappings',
                 pagingParam => lambda.listEventSourceMappings({...pagingParam, FunctionName: functionArn}).promise()
             );
-            const eventSourceMappingDetails = eventSourceMappings.map(mapping => {
-                let snsTopic, sqsQueue;
+            const detailedEventSourceMappings = eventSourceMappings.map(mapping => {
+                let snsTopic;
+                let sqsQueue;
                 const eventArn = mapping.EventSourceArn;
                 if (eventArn?.startsWith('arn:aws:sns:')) {
                     snsTopic = inventory.snsTopicsByArn.get(eventArn);
@@ -159,7 +160,7 @@ export class Surveyor {
                 }
                 return {...mapping, snsTopic, sqsQueue};
             });
-            const functionDetails = {...functionConfiguration, eventSourceMappings: eventSourceMappingDetails};
+            const functionDetails = {...functionConfiguration, eventSourceMappings: detailedEventSourceMappings};
             inventory.lambdaFunctionsByArn.set(functionArn, functionDetails);
         }
     }
