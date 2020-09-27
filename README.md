@@ -19,7 +19,7 @@ $ npm install -g aws-serverless-dataflow
 $ aws-serverless-dataflow COMMAND
 running command...
 $ aws-serverless-dataflow (-v|--version|version)
-aws-serverless-dataflow/1.0.1 darwin-x64 node-v12.18.2
+aws-serverless-dataflow/1.0.2 darwin-x64 node-v12.18.2
 $ aws-serverless-dataflow --help [COMMAND]
 USAGE
   $ aws-serverless-dataflow COMMAND
