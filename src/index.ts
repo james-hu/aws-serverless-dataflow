@@ -18,8 +18,8 @@ Before running this tool, you need to log into your AWS account (through command
 
     region: flags.string({char: 'r', description: 'AWS region'}),
 
-    include: flags.string({char: 'i', default: ['*'], multiple: true, description: 'wildcard patterns for ARN of Lambda functions, SNS topics, and SQS queues that should be includeed'}),
-    exclude: flags.string({char: 'x', multiple: true, description: 'wildcard patterns for ARN of Lambda functions, SNS topics, and SQS queues that should be excluded'}),
+    include: flags.string({char: 'i', default: ['*'], multiple: true, description: 'wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be includeed'}),
+    exclude: flags.string({char: 'x', multiple: true, description: 'wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be excluded'}),
 
     server: flags.boolean({char: 's', description: 'start a local http server and open a browser for pre-viewing generated website'}),
     port: flags.integer({char: 'p', default: 8002, description: 'port number of the local http server for preview'}),

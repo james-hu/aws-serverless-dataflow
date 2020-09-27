@@ -27,15 +27,20 @@ enum Arrows {
 }
 
 enum Relation {
-    Subscriber,
-    DLQ,
-    Consumer,
+    Subscriber = 'Subscriber',
+    DLQ = 'DLQ',
+    Consumer = 'Consumer',
+    User = 'User',
+    Interface = 'Interface',
+    Host = 'Host',
 }
 
 enum Group {
     SnsTopic = 'SnsTopic',
     SqsQueue = 'SqsQueue',
     LambdaFunction = 'LambdaFunction',
+    DomainName = 'DomainName',
+    BasePath = 'BasePath',
 }
 
 export class Generator {
@@ -57,6 +62,7 @@ export class Generator {
         const inventory = this.context.inventory;
         const nodes = new Map<string, Node>();
 
+        // SNS Topics
         for (let topic of inventory.snsTopicsByArn.values()) {
             const topicArn = AwsUtils.parseArn(topic.TopicArn)!;
             nodes.set(topicArn.arn, {
@@ -66,6 +72,7 @@ export class Generator {
             });
         }
 
+        // SQS Queues
         for (let queue of inventory.sqsQueuesByArn.values()) {
             const queueArn = AwsUtils.parseArn(queue.QueueArn)!;
             nodes.set(queueArn.arn, {
@@ -75,6 +82,7 @@ export class Generator {
             });
         }
 
+        // Lambda Functions
         for (let lambda of inventory.lambdaFunctionsByArn.values()) {
             const lambdaArn = AwsUtils.parseArn(lambda.FunctionArn)!;
             nodes.set(lambdaArn.arn, {
@@ -84,6 +92,25 @@ export class Generator {
             });
         }
 
+        // Domain Names & Base Path mappings
+        for (let domain of inventory.apigDomainNamesByName.values()) {
+            const domainName = domain.domainName!;
+            nodes.set(domainName, {
+                id: domainName,
+                label: domainName,
+                group: Group.DomainName,
+            })
+            for (let mapping of domain.basePathMappings) {
+                const basePathUrl = `/${mapping.basePathUrl}`;
+                const domainAndBasePathUrl = mapping.domainAndBasePathUrl;
+                nodes.set(domainAndBasePathUrl, {
+                    id: domainAndBasePathUrl,
+                    label: basePathUrl,
+                    group: Group.BasePath,
+                })
+            }
+        }
+
         return [...nodes.values()];
     }
 
@@ -91,41 +118,74 @@ export class Generator {
         const inventory = this.context.inventory;
         const edges = new Map<string, Edge>();
 
+        // SNS Subscription
         for (let sub of inventory.snsSubscriptionsByArn.values()) {
-            const id = `${sub.TopicArn}->${sub.Endpoint}`;
+            const id = `${sub.Endpoint}->${sub.TopicArn}`;
             // https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html
             const endpoint = sub.Endpoint;
             const queue = inventory.sqsQueuesByArn.get(endpoint);
             if (queue) {
                 edges.set(id, {
-                    from: sub.TopicArn,
-                    to: sub.Endpoint,
+                    from: sub.Endpoint,
+                    to: sub.TopicArn,
                     relation: Relation.Subscriber,
-                    arrows: Arrows.To,
+                    arrows: Arrows.From,
                 });
             }
         }
 
+        // Lambda Function Event Sources and environment variables pointing to other resources
         for (let lambda of inventory.lambdaFunctionsByArn.values()) {
             const lambdaArn = AwsUtils.parseArn(lambda.FunctionArn)!;
+
+            // event sources
             for (let mapping of lambda.eventSourceMappings) {
                 if (mapping.snsTopic) {
-                    const id = `${mapping.snsTopic.TopicArn}->${lambdaArn.arn}`;
+                    const id = `${lambdaArn.arn}->${mapping.snsTopic.TopicArn}`;
                     edges.set(id, {
-                        from: mapping.snsTopic.TopicArn,
-                        to: lambdaArn.arn,
+                        from: lambdaArn.arn,
+                        to: mapping.snsTopic.TopicArn,
                         relation: Relation.Consumer,
-                        arrows: Arrows.To,
+                        arrows: Arrows.From,
+                        dashes: mapping.State !== 'Enabled',
                     });
                 }
                 if (mapping.sqsQueue) {
-                    const id = `${mapping.sqsQueue.QueueArn}->${lambdaArn.arn}`;
+                    const id = `${lambdaArn.arn}->${mapping.sqsQueue.QueueArn}`;
                     edges.set(id, {
-                        from: mapping.sqsQueue.QueueArn,
-                        to: lambdaArn.arn,
+                        from: lambdaArn.arn,
+                        to: mapping.sqsQueue.QueueArn,
                         relation: Relation.Consumer,
-                        arrows: Arrows.To,
+                        arrows: Arrows.From,
+                        dashes: mapping.State !== 'Enabled',
                     });
+                }
+            }
+
+            // environment variables pointing to other resources
+            if (lambda.Environment?.Variables) {
+                for (let [_name, arn] of Object.entries(lambda.Environment.Variables)) {
+                    if (inventory.snsTopicsByArn.has(arn)) {
+                        const id = `${lambdaArn.arn}->${arn}`;
+                        edges.set(id, {
+                            from: lambdaArn.arn,
+                            to: arn,
+                            relation: Relation.User,
+                            arrows: Arrows.None,
+                            dashes: true,
+                        });
+                    }
+                    if (inventory.sqsQueuesByArn.has(arn)) {
+                        const id = `${lambdaArn.arn}->${arn}`;
+                        edges.set(id, {
+                            from: lambdaArn.arn,
+                            to: arn,
+                            relation: Relation.User,
+                            arrows: Arrows.None,
+                            dashes: true,
+                        });
+                    }
+    
                 }
             }
         }
@@ -136,14 +196,38 @@ export class Generator {
                 const redrivePolicy = JSON.parse(queue.RedrivePolicy);
                 const dlqArn: string = redrivePolicy.deadLetterTargetArn;
                 if (inventory.sqsQueuesByArn.has(dlqArn)) {
-                    const id = `${queue.QueueArn}->${dlqArn}`;
+                    const id = `${dlqArn}->${queue.QueueArn}`;
                     edges.set(id, {
-                        from: queue.QueueArn,
-                        to: dlqArn,
+                        from: dlqArn,
+                        to: queue.QueueArn,
                         relation: Relation.DLQ,
-                        arrows: Arrows.To,
+                        arrows: Arrows.From,
                         dashes: true,
                     });
+                }
+            }
+        }
+
+        // Domain Names & Base Path mappings, and Lambda Functions mapped
+        for (let domain of inventory.apigDomainNamesByName.values()) {
+            for (let mapping of domain.basePathMappings) {
+                const basePathUrl = `/${mapping.basePathUrl}`;
+                const domainAndBasePathUrl = mapping.domainAndBasePathUrl;
+                edges.set(domainAndBasePathUrl, {
+                    from: domain.domainName!,
+                    to: domainAndBasePathUrl,
+                    relation: Relation.Host,
+                });
+                const restApi = inventory.apigApisById.get(mapping.restApiId!);
+                if (restApi) {
+                    for (let functionArn of restApi.lambdaFunctionArns) {
+                        const id = `${domainAndBasePathUrl}->${functionArn}`;
+                        edges.set(id, {
+                            from: domainAndBasePathUrl,
+                            to: functionArn,
+                            relation: Relation.Interface,
+                        });
+                    }
                 }
             }
         }

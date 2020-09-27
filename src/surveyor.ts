@@ -4,21 +4,24 @@ import { AwsUtils } from '../bb-commons/typescript';
 import { Context } from './context';
 
 export class Surveyor {
-    private matchPatterns = new Array<string>();
+    private matchPatterns = new Array<string[]>();
+
     constructor(private context: Context){
-        const include = this.context.options.flags.include;
-        const exclude = this.context.options.flags.exclude;
-        if (include) {
-            this.matchPatterns = this.matchPatterns.concat(include);
-        }
-        if (exclude) {
-            this.matchPatterns = this.matchPatterns.concat(exclude.map(p => `!${p}`));
+        const include = this.context.options.flags.include ?? [];
+        const exclude = this.context.options.flags.exclude ?? [];
+        const allExcludes = exclude.map(p => `!${p}`);
+        if (include.length === 0) {
+            this.matchPatterns.push(allExcludes);
+        } else {
+            for (let inc of include) {
+                this.matchPatterns.push([inc, ...allExcludes]);
+            }
         }
     }
 
     async survey() {
         await Promise.all([
-            this.surveyCloudFormation(),
+            // this.surveyCloudFormation(),
             this.surveyApiGateway(),
             this.surveySQS().then(() => this.surveySNS()),
         ]);
@@ -35,18 +38,20 @@ export class Surveyor {
         );
         for (let domainNameObj of domainNameObjects) {
             const domainName = domainNameObj.domainName!
-            const mappings = await AwsUtils.repeatFetchingItemsByPosition(
-                pagingParam => apig.getBasePathMappings({domainName, limit: 500, ...pagingParam}).promise(),
-            );
-            inventory.apigDomainNamesByName.set(domainName, {...domainNameObj, 
-                basePathMappings: mappings.map(mapping => {
-                    const basePathUrl = mapping.basePath === '(none)' ? '' : mapping.basePath!;
-                    const domainAndBasePathUrl = `${domainName}/${basePathUrl}`;
-                    return {...mapping, basePathUrl, domainAndBasePathUrl};
-                }),
-            });
+            if (this.shouldInclude(domainName)) {
+                const mappings = await AwsUtils.repeatFetchingItemsByPosition(
+                    pagingParam => apig.getBasePathMappings({domainName, limit: 500, ...pagingParam}).promise(),
+                );
+                inventory.apigDomainNamesByName.set(domainName, {...domainNameObj, 
+                    basePathMappings: mappings.map(mapping => {
+                        const basePathUrl = mapping.basePath === '(none)' ? '' : mapping.basePath!;
+                        const domainAndBasePathUrl = `${domainName}/${basePathUrl}`;
+                        return {...mapping, basePathUrl, domainAndBasePathUrl};
+                    }),
+                });
+            }
         }
-        this.context.debug(`Found ${domainNameObjects.length} domains in API Gateway`);
+        this.context.debug(`Found ${inventory.apigDomainNamesByName.size}/${domainNameObjects.length} domains in API Gateway`);
 
         // REST APIs
         const restApis = await AwsUtils.repeatFetchingItemsByPosition(
@@ -214,11 +219,16 @@ export class Surveyor {
         this.context.debug(`Found ${inventory.cfStackByName.size}/${stacks.length} stacks in CloudFormation`);
     }
 
-    shouldInclude(arn: string | null | undefined): boolean {
-        if (arn == null) {
+    shouldInclude(text: string | null | undefined): boolean {
+        if (text == null) {
             return false;
         }
-        return matcher.isMatch(arn, this.matchPatterns);
+        for (let patterns of this.matchPatterns) {
+            if (matcher.isMatch(text, patterns)) {
+                return true;    // matched by any include and all excludes
+            }
+        }
+        return false;
     }
 
 }

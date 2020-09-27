@@ -17,7 +17,7 @@ type SqsQueueDetails = SQS.QueueAttributeMap & {
 type ApiGatewayRestApiDetails = APIGateway.RestApi & {
     lambdaFunctionArns: Set<string>,
     resources: Array<APIGateway.Resource & {
-        integrations: Array<APIGateway.Integration & {lambdaFunctionArn: string|null}>,
+        integrations: Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>,
     }>,
 }
 type CloudFormationStackDetails = CloudFormation.StackSummary & {
@@ -28,7 +28,7 @@ export class Context {
     public awsOptions: Pick<ServiceConfigurationOptions, 'region'> = {};
 
     constructor(public options: typeof AwsServerlessDataflow.Options,
-                ) {
+    ) {
         this.awsOptions.region = options.flags.region;
     }
 
@@ -36,22 +36,22 @@ export class Context {
         cfStackByName: new Map<string, CloudFormationStackDetails>(),
         cfStackById: new Map<string, CloudFormationStackDetails>(),
         lambdaFunctionsByArn: new Map<string, Lambda.FunctionConfiguration & {
-                                    eventSourceMappings: Array<Lambda.EventSourceMappingConfiguration & {
-                                        sqsQueue?: SqsQueueDetails,
-                                        snsTopic?: SnsTopicDetails,
-                                    }>,
-                                }>(),
+            eventSourceMappings: Array<Lambda.EventSourceMappingConfiguration & {
+                sqsQueue?: SqsQueueDetails,
+                snsTopic?: SnsTopicDetails,
+            }>,
+        }>(),
         snsTopicsByArn: new Map<string, SnsTopicDetails>(),
         snsSubscriptionsByArn: new Map<string, Required<SNS.Subscription> & SNS.SubscriptionAttributesMap>(),
         sqsQueuesByUrl: new Map<string, SqsQueueDetails>(),
         sqsQueuesByArn: new Map<string, SqsQueueDetails>(),
         apigApisById: new Map<string, ApiGatewayRestApiDetails>(),
         apigDomainNamesByName: new Map<string, APIGateway.DomainName & {
-                                    basePathMappings: Array<APIGateway.BasePathMapping & {
-                                                                basePathUrl: string,
-                                                                domainAndBasePathUrl: string,
-                                                            }>
-                                }>(),
+            basePathMappings: Array<APIGateway.BasePathMapping & {
+                basePathUrl: string,
+                domainAndBasePathUrl: string,
+            }>
+        }>(),
     };
 
     info(message?: any, ...optionalParams: any[]): void {
