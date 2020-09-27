@@ -14,6 +14,7 @@
     "@unbounce/parse-aws-arn": "^1.2.1",
     "aws-sdk": "^2.756.0",
     "fs-extra": "^9.0.1",
+    "matcher": "^3.0.0",
     "open": "^7.2.1",
     "really-simple-http-server": "^1.2.0",
     "tslib": "^1.13.0"
@@ -24,6 +25,7 @@
     "@types/aws-sdk": "^2.7.0",
     "@types/chai": "^4.2.12",
     "@types/fs-extra": "^9.0.1",
+    "@types/matcher": "^2.0.0",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.12.6",
     "chai": "^4.2.0",

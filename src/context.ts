@@ -6,9 +6,13 @@ import AwsServerlessDataflow = require('.');
 
 type SnsTopicDetails = SNS.TopicAttributesMap & {
     subscriptions: Array<Required<SNS.Subscription> & SNS.SubscriptionAttributesMap>,
+    TopicArn: string,
 };
 type SqsQueueDetails = SQS.QueueAttributeMap & {
     subscriptions: Array<Required<SNS.Subscription> & SNS.SubscriptionAttributesMap>,
+    QueueUrl: string,
+    QueueArn: string,
+    RedrivePolicy: string,
 };
 type ApiGatewayRestApiDetails = APIGateway.RestApi & {
     lambdaFunctionArns: Set<string>,

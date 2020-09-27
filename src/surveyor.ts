@@ -1,9 +1,20 @@
 import { APIGateway, CloudFormation, Lambda, SNS, SQS } from 'aws-sdk/clients/all';
+import matcher = require('matcher');
 import { AwsUtils } from '../bb-commons/typescript';
 import { Context } from './context';
 
 export class Surveyor {
-    constructor(private context: Context){}
+    private matchPatterns = new Array<string>();
+    constructor(private context: Context){
+        const include = this.context.options.flags.include;
+        const exclude = this.context.options.flags.exclude;
+        if (include) {
+            this.matchPatterns = this.matchPatterns.concat(include);
+        }
+        if (exclude) {
+            this.matchPatterns = this.matchPatterns.concat(exclude.map(p => `!${p}`));
+        }
+    }
 
     async survey() {
         await Promise.all([
@@ -22,7 +33,6 @@ export class Surveyor {
         const domainNameObjects = await AwsUtils.repeatFetchingItemsByPosition(
             pagingParam => apig.getDomainNames({limit: 100, ...pagingParam}).promise(),
         );
-        this.context.debug(`Found ${domainNameObjects.length} domains in API Gateway`);
         for (let domainNameObj of domainNameObjects) {
             const domainName = domainNameObj.domainName!
             const mappings = await AwsUtils.repeatFetchingItemsByPosition(
@@ -36,12 +46,12 @@ export class Surveyor {
                 }),
             });
         }
+        this.context.debug(`Found ${domainNameObjects.length} domains in API Gateway`);
 
         // REST APIs
         const restApis = await AwsUtils.repeatFetchingItemsByPosition(
             pagingParam => apig.getRestApis({limit: 100, ...pagingParam}).promise(),
         );
-        this.context.debug(`Found ${restApis.length} APIs in API Gateway`);
         for (let restApi of restApis) {
             const restApiId = restApi.id!;
 
@@ -70,6 +80,7 @@ export class Surveyor {
             const restApiDetails = {...restApi, lambdaFunctionArns, resources: detailedResources};
             inventory.apigApisById.set(restApiId, restApiDetails);
         }
+        this.context.debug(`Found ${restApis.length} APIs in API Gateway`);
     }
 
     retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(uri?: string): string|null {
@@ -87,14 +98,17 @@ export class Surveyor {
         const queueUrls = await AwsUtils.repeatFetchingItemsByNextToken<string>('QueueUrls',
             pagingParam => sqs.listQueues({...pagingParam}).promise(),
         );
-        this.context.debug(`Found ${queueUrls.length} queues in SQS`);
         for (let queueUrl of queueUrls) {
             const queueAttributes = (await sqs.getQueueAttributes({QueueUrl: queueUrl, AttributeNames: ['All']}).promise()).Attributes!;
             queueAttributes.QueueUrl = queueUrl;    // add this for convenience
-            const queueDetails = {...queueAttributes, subscriptions: [] as any};
-            inventory.sqsQueuesByUrl.set(queueUrl, queueDetails);
-            inventory.sqsQueuesByArn.set(queueAttributes.QueueArn, queueDetails);
+            const queueDetails = {...queueAttributes, subscriptions: []} as any;
+            const queueArn = queueAttributes.QueueArn;
+            if (this.shouldInclude(queueArn)) {
+                inventory.sqsQueuesByUrl.set(queueUrl, queueDetails);
+                inventory.sqsQueuesByArn.set(queueArn, queueDetails);
+            }
         }
+        this.context.debug(`Found ${inventory.sqsQueuesByArn.size}/${queueUrls.length} queues in SQS`);
     }
 
     async surveySNS() {
@@ -105,34 +119,38 @@ export class Surveyor {
         const topics = await AwsUtils.repeatFetchingItemsByNextToken<SNS.Topic>('Topics',
             pagingParam => sns.listTopics({...pagingParam}).promise(),
         );
-        this.context.debug(`Found ${topics.length} topics in SNS`);
         const topicArns = topics.map(topic => topic.TopicArn!);
         for (let topicArn of topicArns) {
             const topicAttributes = (await sns.getTopicAttributes({TopicArn: topicArn}).promise()).Attributes!;
-            const topicDetails = {...topicAttributes, subscriptions: [] as any};
-            inventory.snsTopicsByArn.set(topicArn, topicDetails);
+            const topicDetails = {...topicAttributes, subscriptions: []} as any;
+            if (this.shouldInclude(topicArn)) {
+                inventory.snsTopicsByArn.set(topicArn, topicDetails);
+            }
         }
+        this.context.debug(`Found ${inventory.snsTopicsByArn.size}/${topics.length} topics in SNS`);
 
         // subscriptions
         const subscriptions = await AwsUtils.repeatFetchingItemsByNextToken<SNS.Subscription>('Subscriptions',
             pagingParam => sns.listSubscriptions({...pagingParam}).promise(),
         );
-        this.context.debug(`Found ${subscriptions.length} subscriptions in SNS`);
         for (let subscription of subscriptions) {
             const subscriptionArn = subscription.SubscriptionArn!;
-            try{
-                const subscriptionAttributes = (await sns.getSubscriptionAttributes({SubscriptionArn: subscriptionArn}).promise()).Attributes!;
-                const subscriptionDetails = {...subscriptionAttributes, ...subscription as Required<typeof subscription>};
-                inventory.snsSubscriptionsByArn.set(subscriptionArn, subscriptionDetails);
-                inventory.snsTopicsByArn.get(subscription.TopicArn!)?.subscriptions.push(subscriptionDetails);
-            }catch(e){
-                if (e.statusCode === 404 || e.statusCode === 400) {
-                    console.log(`Ignore zombie or pending subscription: ${subscriptionArn}`);
-                } else {
-                    throw e;
+            if (this.shouldInclude(subscription.TopicArn)) {
+                try{
+                    const subscriptionAttributes = (await sns.getSubscriptionAttributes({SubscriptionArn: subscriptionArn}).promise()).Attributes!;
+                    const subscriptionDetails = {...subscriptionAttributes, ...subscription as Required<typeof subscription>};
+                    inventory.snsSubscriptionsByArn.set(subscriptionArn, subscriptionDetails);
+                    inventory.snsTopicsByArn.get(subscription.TopicArn!)?.subscriptions.push(subscriptionDetails);
+                }catch(e){
+                    if (e.statusCode === 404 || e.statusCode === 400) {
+                        console.log(`Ignore zombie or pending subscription: ${subscriptionArn}`);
+                    } else {
+                        throw e;
+                    }
                 }
             }
         }
+        this.context.debug(`Found ${inventory.snsSubscriptionsByArn.size}/${subscriptions.length} subscriptions in SNS`);
     }
 
     async surveyLambda() {
@@ -141,28 +159,30 @@ export class Surveyor {
         const functionConfigurations = await AwsUtils.repeatFetchingItemsByMarker<Lambda.FunctionConfiguration>('Functions',
             pagingParam => lambda.listFunctions({...pagingParam}).promise()
         );
-        this.context.debug(`Found ${functionConfigurations.length} functions in Lambda`);
         for(let functionConfiguration of functionConfigurations) {
             const functionArn = functionConfiguration.FunctionArn!;
-            const eventSourceMappings = await AwsUtils.repeatFetchingItemsByMarker<Lambda.EventSourceMappingConfiguration>('EventSourceMappings',
-                pagingParam => lambda.listEventSourceMappings({...pagingParam, FunctionName: functionArn}).promise()
-            );
-            const detailedEventSourceMappings = eventSourceMappings.map(mapping => {
-                let snsTopic;
-                let sqsQueue;
-                const eventArn = mapping.EventSourceArn;
-                if (eventArn?.startsWith('arn:aws:sns:')) {
-                    snsTopic = inventory.snsTopicsByArn.get(eventArn);
-                } else if (eventArn?.startsWith('arn:aws:sqs:')) {
-                    sqsQueue = inventory.sqsQueuesByArn.get(eventArn);
-                } else {
-                    this.context.debug(`Ignore event source ${eventArn} for Lambda function ${functionConfiguration.FunctionName}`);
-                }
-                return {...mapping, snsTopic, sqsQueue};
-            });
-            const functionDetails = {...functionConfiguration, eventSourceMappings: detailedEventSourceMappings};
-            inventory.lambdaFunctionsByArn.set(functionArn, functionDetails);
+            if (this.shouldInclude(functionArn)) {
+                const eventSourceMappings = await AwsUtils.repeatFetchingItemsByMarker<Lambda.EventSourceMappingConfiguration>('EventSourceMappings',
+                    pagingParam => lambda.listEventSourceMappings({...pagingParam, FunctionName: functionArn}).promise()
+                );
+                const detailedEventSourceMappings = eventSourceMappings.map(mapping => {
+                    let snsTopic;
+                    let sqsQueue;
+                    const eventArn = mapping.EventSourceArn;
+                    if (eventArn?.startsWith('arn:aws:sns:')) {
+                        snsTopic = inventory.snsTopicsByArn.get(eventArn);
+                    } else if (eventArn?.startsWith('arn:aws:sqs:')) {
+                        sqsQueue = inventory.sqsQueuesByArn.get(eventArn);
+                    } else {
+                        this.context.debug(`Ignore event source ${eventArn} for Lambda function ${functionConfiguration.FunctionName}`);
+                    }
+                    return {...mapping, snsTopic, sqsQueue};
+                });
+                const functionDetails = {...functionConfiguration, eventSourceMappings: detailedEventSourceMappings};
+                inventory.lambdaFunctionsByArn.set(functionArn, functionDetails);
+            }
         }
+        this.context.debug(`Found ${inventory.lambdaFunctionsByArn.size}/${functionConfigurations.length} functions in Lambda`);
     }
 
     async surveyCloudFormation() {
@@ -171,25 +191,34 @@ export class Surveyor {
         const stacks = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackSummary>('StackSummaries',
             pagingParam => cf.listStacks({...pagingParam}).promise(),
         );
-        this.context.debug(`Found ${stacks.length} stacks in CloudFormation`);
         for (let stack of stacks) {
-            let resources = new Array<CloudFormation.StackResourceSummary>();
-            /* too time consuming and 400 Throttling: Rate exceeded
-            try {
-                resources = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackResourceSummary>('StackResourceSummaries',
-                    pagingParam => cf.listStackResources({...pagingParam, StackName: stack.StackName}).promise(),
-                );
-            } catch(e) {
-                if (e.statusCode === 400) {
-                    this.context.debug(`Ignore resources of CloudFormation stack: ${e}`);
-                } else {
-                    console.log(e);
-                }
-            }*/
-            const stackDetails = {...stack, resources};
-            inventory.cfStackByName.set(stack.StackName, stackDetails);
-            inventory.cfStackById.set(stack.StackId!, stackDetails);
+            if (this.shouldInclude(stack.StackName)) {
+                let resources = new Array<CloudFormation.StackResourceSummary>();
+                /* too time consuming and 400 Throttling: Rate exceeded
+                try {
+                    resources = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackResourceSummary>('StackResourceSummaries',
+                        pagingParam => cf.listStackResources({...pagingParam, StackName: stack.StackName}).promise(),
+                    );
+                } catch(e) {
+                    if (e.statusCode === 400) {
+                        this.context.debug(`Ignore resources of CloudFormation stack: ${e}`);
+                    } else {
+                        console.log(e);
+                    }
+                }*/
+                const stackDetails = {...stack, resources};
+                inventory.cfStackByName.set(stack.StackName, stackDetails);
+                inventory.cfStackById.set(stack.StackId!, stackDetails);
+            }
         }
+        this.context.debug(`Found ${inventory.cfStackByName.size}/${stacks.length} stacks in CloudFormation`);
+    }
+
+    shouldInclude(arn: string | null | undefined): boolean {
+        if (arn == null) {
+            return false;
+        }
+        return matcher.isMatch(arn, this.matchPatterns);
     }
 
 }

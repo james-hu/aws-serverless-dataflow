@@ -15,6 +15,7 @@ interface Edge {
     to: string,
     arrows?: Arrows,
     relation?: Relation,
+    dashes?: boolean,
     [others: string]: any,
 }
 
@@ -27,6 +28,8 @@ enum Arrows {
 
 enum Relation {
     Subscriber,
+    DLQ,
+    Consumer,
 }
 
 enum Group {
@@ -97,6 +100,7 @@ export class Generator {
                 edges.set(id, {
                     from: sub.TopicArn,
                     to: sub.Endpoint,
+                    relation: Relation.Subscriber,
                     arrows: Arrows.To,
                 });
             }
@@ -110,6 +114,7 @@ export class Generator {
                     edges.set(id, {
                         from: mapping.snsTopic.TopicArn,
                         to: lambdaArn.arn,
+                        relation: Relation.Consumer,
                         arrows: Arrows.To,
                     });
                 }
@@ -118,7 +123,26 @@ export class Generator {
                     edges.set(id, {
                         from: mapping.sqsQueue.QueueArn,
                         to: lambdaArn.arn,
+                        relation: Relation.Consumer,
                         arrows: Arrows.To,
+                    });
+                }
+            }
+        }
+
+        // SQS DLQ
+        for (let queue of inventory.sqsQueuesByArn.values()) {
+            if (queue.RedrivePolicy) {
+                const redrivePolicy = JSON.parse(queue.RedrivePolicy);
+                const dlqArn: string = redrivePolicy.deadLetterTargetArn;
+                if (inventory.sqsQueuesByArn.has(dlqArn)) {
+                    const id = `${queue.QueueArn}->${dlqArn}`;
+                    edges.set(id, {
+                        from: queue.QueueArn,
+                        to: dlqArn,
+                        relation: Relation.DLQ,
+                        arrows: Arrows.To,
+                        dashes: true,
                     });
                 }
             }
