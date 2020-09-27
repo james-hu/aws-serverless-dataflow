@@ -43,6 +43,8 @@
   "files": [
     "/bin",
     "/lib",
+    "/src/index.html",
+    "/img",
     "/bb-commons/typescript"
   ],
   "homepage": "https://github.com/james-hu/aws-serverless-dataflow",
