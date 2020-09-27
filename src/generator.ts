@@ -52,8 +52,8 @@ export class Generator {
 
         const codeDir = path.resolve(__dirname);
         return Promise.all([
-            fs.copy(path.join(codeDir, 'src', 'index.html'), path.join(dir, 'index.html')),
-            fs.copy(path.join(codeDir, 'img'), path.join(dir, 'img')),
+            fs.copy(path.join(codeDir, '..', 'src', 'index.html'), path.join(dir, 'index.html')),
+            fs.copy(path.join(codeDir, '..', 'img'), path.join(dir, 'img')),
             fs.writeFile(path.join(dir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify(this.generateNodes(), null, 2)),
             fs.writeFile(path.join(dir, 'edges.js'), 'var edgesArray = ' + JSON.stringify(this.generateEdges(), null, 2)),
         ]);
