@@ -16,6 +16,7 @@ interface Edge {
     arrows?: Arrows,
     relation?: Relation,
     dashes?: boolean,
+    stateIsEnabled?: boolean,
     [others: string]: any,
 }
 
@@ -68,7 +69,7 @@ export class Generator {
             const topicArn = AwsUtils.parseArn(topic.TopicArn)!;
             nodes.set(topicArn.arn, {
                 id: topicArn.arn,
-                label: `topic:${topicArn.resource}`,
+                label: `topic:\n${topicArn.resource}`,
                 group: Group.SnsTopic,
             });
         }
@@ -78,7 +79,7 @@ export class Generator {
             const queueArn = AwsUtils.parseArn(queue.QueueArn)!;
             nodes.set(queueArn.arn, {
                 id: queueArn.arn,
-                label: `queue:${queueArn.resource}`,
+                label: `queue:\n${queueArn.resource}`,
                 group: Group.SqsQueue,
             });
         }
@@ -88,7 +89,7 @@ export class Generator {
             const lambdaArn = AwsUtils.parseArn(lambda.FunctionArn)!;
             nodes.set(lambdaArn.arn, {
                 id: lambdaArn.arn,
-                label: `${lambdaArn.resource}`,
+                label: `${lambdaArn.resourceId}`,
                 group: Group.LambdaFunction,
             });
         }
@@ -141,6 +142,7 @@ export class Generator {
 
             // event sources
             for (let mapping of lambda.eventSourceMappings) {
+                const stateIsEnabled = mapping.State === 'Enabled';
                 if (mapping.snsTopic) {
                     const id = `${lambdaArn.arn}->${mapping.snsTopic.TopicArn}`;
                     edges.set(id, {
@@ -148,7 +150,8 @@ export class Generator {
                         to: mapping.snsTopic.TopicArn,
                         relation: Relation.Consumer,
                         arrows: Arrows.From,
-                        dashes: mapping.State !== 'Enabled',
+                        dashes: !stateIsEnabled,
+                        stateIsEnabled,
                     });
                 }
                 if (mapping.sqsQueue) {
@@ -158,7 +161,8 @@ export class Generator {
                         to: mapping.sqsQueue.QueueArn,
                         relation: Relation.Consumer,
                         arrows: Arrows.From,
-                        dashes: mapping.State !== 'Enabled',
+                        dashes: !stateIsEnabled,
+                        stateIsEnabled,
                     });
                 }
             }

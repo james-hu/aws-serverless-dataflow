@@ -19,40 +19,135 @@
 </head>
 
 <body>
-    <p>AWS Serverless Dataflow Diagram</p>
-    <div>
-        <label>
-          <input type="checkbox" id="hideOrphan" name="hideOrphan" value="hideOrphan" checked />
-          Hide orphan nodes
-        </label>
+    <div style="display: flex; align-items: center;">
+        <div style="flex-grow: 1;">
+            <h2 style="text-align: center;">AWS Serverless Dataflow Diagram</h2>
+            <p style="margin-right: 3em; text-align: right; font-size: x-small;">
+                (<a href="https://github.com/james-hu/aws-serverless-dataflow">Open source on GitHub</a>)
+            </p>
+        </div>
+        <div>
+            <div>
+                <label>
+                  <input type="checkbox" id="disablePhysics" name="disablePhysics" value="disablePhysics" />
+                  Disable auto-positioning
+                </label>
+            </div>
+            <div>
+                <!-- space -->
+            </div>
+            <div>
+                <label>
+                  <input type="checkbox" id="hideOrphan" name="hideOrphan" value="hideOrphan" checked />
+                  Hide orphan resources
+                </label>
+            </div>
+            <div>
+                <label>
+                  <input type="checkbox" id="hideApiGateway" name="hideApiGateway" value="hideApiGateway" />
+                  Hide API Gateway resources
+                </label>
+            </div>
+            <div>
+                <label>
+                  <input type="checkbox" id="hideMessaging" name="hideMessaging" value="hideMessaging" />
+                  Hide messaging resources
+                </label>
+            </div>
+            <div>
+                <label>
+                  <input type="checkbox" id="hideDLQ" name="hideDLQ" value="hideDLQ" />
+                  Hide DLQs in SQS
+                </label>
+            </div>
+        </div>
     </div>
     <div id="serverless-network"></div>
 
     <script type="text/javascript">
+        var disablePhysics = false;
+
         var hideOrphan = true;
+        var hideDLQ = false;
+        var hideApiGateway = false;
+        var hideMessaging = false;
+
+        function shouldHideNodeDisregardingEdges(node) {
+            if (hideApiGateway && (node.group === 'DomainName' || node.group === 'BasePath')) {
+                return true;
+            }
+            if (hideMessaging && (node.group === 'SnsTopic' || node.group === 'SqsQueue')) {
+                return true;
+            }
+            return false;
+        }
 
         var nodes = new vis.DataSet(nodesArray);
         var edges = new vis.DataSet(edgesArray);
 
+        var edgesView = new vis.DataView(edges);
         var nodesView = new vis.DataView(nodes, {
             filter: function(node) {
-                if (!hideOrphan) {
-                    return true;
+                if (shouldHideNodeDisregardingEdges(node)) {
+                    return false;
                 }
-                connEdges = edges.get({
-                    filter: function(edge) {
-                        return(
-                            (edge.to == node.id) || (edge.from == node.id));
-                    }});
-                return connEdges.length > 0;
+
+                var nodeEdges;
+                if (hideOrphan || hideDLQ) {
+                    nodeEdges = edgesView.get({
+                        filter: function(edge) {
+                            return edge.to === node.id || edge.from === node.id;
+                        }
+                    });
+                }
+                if (hideOrphan) {
+                    var numNonHiddenEdges = 0;
+                    for (var edge of nodeEdges) {
+                        var otherNodeId = edge.to === node.id ? edge.from : edge.to;
+                        var otherNode = nodes.get(otherNodeId);
+                        if (otherNode && !shouldHideNodeDisregardingEdges(otherNode)) {
+                            numNonHiddenEdges ++;
+                        }
+                    }
+                    if (numNonHiddenEdges === 0) {
+                        return false;
+                    }
+                }
+                if (hideDLQ && node.group === 'SqsQueue') {
+                    var isDLQ = false;
+                    var numEnabledNonDlqEdges = 0;
+                    for (var edge of nodeEdges) {
+                        if (edge.relation === 'DLQ' && edge.from === node.id) {
+                            isDLQ = true;
+                        } else if (edge.stateIsEnabled !== false) {
+                            numEnabledNonDlqEdges ++;
+                        }
+                    }
+                    if (isDLQ && numEnabledNonDlqEdges < 1) {    // only play a DLQ role, no other enabled usage
+                        return false;
+                    }
+                }
+                return true;
             }
         });
         var container = document.getElementById("serverless-network");
         var data = {
             nodes: nodesView,
-            edges: edges,
+            edges: edgesView,
         };
         var options = {
+            /*
+            configure: {
+                enabled: true,
+                filter: 'physics, layout, nodes, edges',
+                showButton: true
+            },*/
+            physics: {
+                barnesHut: {
+                    centralGravity: 0.1,
+                    damping: 0.58,
+                },
+            },
             nodes: {
                 shape: 'circularImage',
                 imagePadding: 10,
@@ -76,25 +171,34 @@
                 },
                 DomainName: {
                     shape: 'ellipse',
-                    color:{background:'#ffcba6'}
+                    color:{background:'#e9c4f5'}
                 },
                 BasePath: {
                     shape: 'box',
-                    color:{background:'#ffe1cc'}
+                    color:{background:'#eed7f5'}
                 }
             },
             edges: {
                 color: {
                     inherit: false,
+                    color: '#363680',
+                    highlight: '#1e66d4',
+                    hover: '#1e66d4'
                 },
             }
         };
         var network = new vis.Network(container, data, options);
 
-        document.getElementById("hideOrphan").addEventListener("change", function(e) {
-            hideOrphan = e.target.checked;
-            nodesView.refresh();
-        })
+        document.getElementById('disablePhysics').addEventListener("change", function(e) {
+            network.setOptions( { physics: !e.target.checked } );
+        });
+
+        for (var toggle of ['hideOrphan', 'hideDLQ', 'hideApiGateway', 'hideMessaging']) {
+            document.getElementById(toggle).addEventListener("change", function(e) {
+                window[this] = e.target.checked;
+                nodesView.refresh();
+            }.bind(toggle));
+        }
     </script>
 </body>
 
