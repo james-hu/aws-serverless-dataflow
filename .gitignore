@@ -8,3 +8,5 @@
 node_modules
 *.tgz
 dataflow
+package
+tsconfig.tsbuildinfo
