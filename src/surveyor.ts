@@ -157,7 +157,7 @@ export class Surveyor {
                     inventory.snsTopicsByArn.get(subscription.TopicArn!)?.subscriptions.push(subscriptionDetails);
                 }catch(e){
                     if (e.statusCode === 404 || e.statusCode === 400) {
-                        console.log(`Ignore zombie or pending subscription: ${subscriptionArn}`);
+                        this.context.debug(`Ignore zombie or pending subscription: ${subscriptionArn}`);
                     } else {
                         throw e;
                     }
