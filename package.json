@@ -46,8 +46,7 @@
     "/bin",
     "/lib",
     "/site",
-    "/bb-commons/typescript",
-    "/node_modules/vis-network/standalone/umd/vis-network.min.js"
+    "/bb-commons/typescript"
   ],
   "homepage": "https://github.com/james-hu/aws-serverless-dataflow",
   "keywords": [
