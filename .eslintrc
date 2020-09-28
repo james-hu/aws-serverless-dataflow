@@ -2,5 +2,17 @@
   "extends": [
     "oclif",
     "oclif-typescript"
-  ]
+  ],
+  "rules": {
+    "valid-jsdoc": [
+      "error",
+      {
+        "requireReturnType": false,
+        "requireParamType": false 
+      }
+    ],
+    "lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
+    "object-curly-spacing": ["error", "always"],
+    "semi": ["error", "always"]
+  }
 }
