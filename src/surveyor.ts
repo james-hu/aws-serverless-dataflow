@@ -20,7 +20,7 @@ export class Surveyor {
     }
 
     async survey() {
-        this.context.cliUx.action.start('Suveying API Gateway and SQS', undefined, {stdout: true});
+        this.context.cliUx.action.start('Surveying API Gateway and SQS', undefined, {stdout: true});
         await Promise.all([
             // this.surveyCloudFormation(),
             this.surveyApiGateway(),
@@ -28,11 +28,11 @@ export class Surveyor {
         ]);
         this.context.cliUx.action.stop();
 
-        this.context.cliUx.action.start('Suveying SNS', undefined, {stdout: true});
+        this.context.cliUx.action.start('Surveying SNS', undefined, {stdout: true});
         await this.surveySNS();
         this.context.cliUx.action.stop();
         
-        this.context.cliUx.action.start('Suveying Lambda', undefined, {stdout: true});
+        this.context.cliUx.action.start('Surveying Lambda', undefined, {stdout: true});
         await this.surveyLambda();
         this.context.cliUx.action.stop();
     }

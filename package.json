@@ -18,7 +18,8 @@
     "matcher": "^3.0.0",
     "open": "^7.2.1",
     "really-simple-http-server": "^1.2.0",
-    "tslib": "^1.13.0"
+    "tslib": "^1.13.0",
+    "vis-network": "^8.3.2"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1.22.2",
@@ -45,11 +46,24 @@
     "/bin",
     "/lib",
     "/site",
-    "/bb-commons/typescript"
+    "/bb-commons/typescript",
+    "/node_modules/vis-network/standalone/umd/vis-network.min.js"
   ],
   "homepage": "https://github.com/james-hu/aws-serverless-dataflow",
   "keywords": [
-    "oclif"
+    "aws",
+    "api",
+    "gateway",
+    "apigateway",
+    "lambda",
+    "serverless",
+    "sqs",
+    "sns",
+    "topology",
+    "dataflow",
+    "diagram",
+    "visualisation",
+    "visualization"
   ],
   "license": "Apache 2.0",
   "main": "lib/index.js",

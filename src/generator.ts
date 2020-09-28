@@ -48,18 +48,25 @@ export class Generator {
     constructor(protected context: Context) {}
 
     async generate() {
-        const dir = this.context.options.args.path;
-        this.context.cliUx.action.start(`Generating static website content in '${dir}'`, undefined, {stdout: true});
+        const destDir = this.context.options.args.path;
+        this.context.cliUx.action.start(`Generating static website content in '${destDir}'`, undefined, {stdout: true});
 
-        await fs.emptyDir(dir);
+        const srcSrcDir = path.resolve(__dirname);
+        const srcSiteDir = path.join(srcSrcDir, '..', 'site');
+        const srcVisNetworkJsFile = path.join(srcSrcDir, '..', 'node_modules', 'vis-network', 'standalone', 'umd', 'vis-network.min.js');
+        const destJsDir = path.join(destDir, 'js');
+        const destVisNetworkJsFile = path.join(destJsDir, 'vis-network.min.js');
 
-        const codeDir = path.resolve(__dirname);
-        const siteDir = path.join(codeDir, '..', 'site')
+        await fs.emptyDir(destDir);
+
         await Promise.all([
-            fs.copy(siteDir, dir),
-            fs.writeFile(path.join(dir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify(this.generateNodes(), null, 2)),
-            fs.writeFile(path.join(dir, 'edges.js'), 'var edgesArray = ' + JSON.stringify(this.generateEdges(), null, 2)),
+            fs.copy(srcSiteDir, destDir),
+            fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify(this.generateNodes(), null, 2)),
+            fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify(this.generateEdges(), null, 2)),
         ]);
+        await fs.emptyDir(destJsDir);
+        await fs.copy(srcVisNetworkJsFile, destVisNetworkJsFile);
+
         this.context.cliUx.action.stop();
     }
 
