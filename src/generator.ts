@@ -49,15 +49,18 @@ export class Generator {
 
     async generate() {
         const dir = this.context.options.args.path;
+        this.context.cliUx.action.start(`Generating static website content in '${dir}'`, undefined, {stdout: true});
+
         await fs.emptyDir(dir);
 
         const codeDir = path.resolve(__dirname);
         const siteDir = path.join(codeDir, '..', 'site')
-        return Promise.all([
+        await Promise.all([
             fs.copy(siteDir, dir),
             fs.writeFile(path.join(dir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify(this.generateNodes(), null, 2)),
             fs.writeFile(path.join(dir, 'edges.js'), 'var edgesArray = ' + JSON.stringify(this.generateEdges(), null, 2)),
         ]);
+        this.context.cliUx.action.stop();
     }
 
     generateNodes(): Array<Node> {

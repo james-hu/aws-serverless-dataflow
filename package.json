@@ -13,6 +13,7 @@
     "@oclif/plugin-help": "^3.2.0",
     "@unbounce/parse-aws-arn": "^1.2.1",
     "aws-sdk": "^2.756.0",
+    "cli-ux": "^5.5.0",
     "fs-extra": "^9.0.1",
     "matcher": "^3.0.0",
     "open": "^7.2.1",
