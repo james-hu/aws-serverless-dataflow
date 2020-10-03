@@ -11,6 +11,8 @@
         "requireParamType": false 
       }
     ],
+    "no-eq-null": 0,
+    "eqeqeq": ["error", "smart"],
     "lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
     "object-curly-spacing": ["error", "always"],
     "semi": ["error", "always"]

@@ -36,6 +36,8 @@ you can use `--include` and `--exclude` options to specify which to include and 
 Both of them can have multiple appearances.
 A resource would be included if any of the `--include` wild card patterns matches and none of the `--include` wild card patterns matches.
 
+`-c` or `--cloud-formation` would enable clustering resouces by CloudFormation stacks.
+It is useful when you would like to have a high level view.
 
 ## Usage
 
@@ -65,6 +67,7 @@ By passing `-h` or `--help` to the command line, you can see all supported argum
 ## Options
 
 ```sh-session
+  -c, --cloud-formation  survey CloudFormation stack information (this takes more time)
   -d, --debug            output debug messages
   -h, --help             show CLI help
   -i, --include=include  [default: *] wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be includeed

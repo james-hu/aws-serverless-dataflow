@@ -7,6 +7,8 @@ interface Node {
   id: string;
   label: string;
   group?: Group;
+  stackId?: string;
+  stackName?: string;
   [others: string]: any;
 }
 
@@ -42,6 +44,7 @@ enum Group {
   LambdaFunction = 'LambdaFunction',
   DomainName = 'DomainName',
   BasePath = 'BasePath',
+  CloudFormationStack = 'CfStack',
 }
 
 export class Generator {
@@ -58,12 +61,17 @@ export class Generator {
     const destJsDir = path.join(destDir, 'js');
     const destVisNetworkJsFile = path.join(destJsDir, 'vis-network.min.js');
 
+    const nodes = this.generateNodes();
+    const edges = this.generateEdges();
+    const cfStackClusters = this.generateCloudFormationStackClusters(nodes);
+
     await fs.emptyDir(destDir);
 
     await Promise.all([
       fs.copy(srcSiteDir, destDir),
-      fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify(this.generateNodes(), null, 2)),
-      fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify(this.generateEdges(), null, 2)),
+      fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify([...nodes.values()], null, 2)),
+      fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], null, 2)),
+      fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], null, 2)),
     ]);
     await fs.emptyDir(destJsDir);
     await fs.copy(srcVisNetworkJsFile, destVisNetworkJsFile);
@@ -71,7 +79,7 @@ export class Generator {
     this.context.cliUx.action.stop();
   }
 
-  generateNodes(): Array<Node> {
+  generateNodes(): Map<string, Node> {
     const inventory = this.context.inventory;
     const nodes = new Map<string, Node>();
 
@@ -124,10 +132,48 @@ export class Generator {
       }
     }
 
-    return [...nodes.values()];
+    return nodes;
   }
 
-  generateEdges(): Array<Edge> {
+  generateCloudFormationStackClusters(nodes: Map<string, Node>): Map<string, Node> {
+    const inventory = this.context.inventory;
+    const stacks = new Map<string, Node>();
+
+    for (const stack of inventory.cfStackById.values()) {
+      const stackName = stack.StackName;
+      const stackIdArn = stack.StackId!;
+      const stackArn = AwsUtils.parseArn(stackIdArn);
+      for (const resource of stack.resources) {
+        let arn: string|null|undefined = null;
+        switch (resource.ResourceType) {
+        case 'AWS::Lambda::Function':
+          arn = `arn:aws:lambda:${stackArn?.region}:${stackArn?.accountId}:function:${resource.PhysicalResourceId}`;
+          break;
+        case 'AWS::SQS::Queue':
+          arn = inventory.sqsQueuesByUrl.get(resource.PhysicalResourceId!)?.QueueArn;
+          break;
+        case 'AWS::SNS::Topic':
+          arn = resource.PhysicalResourceId!;
+          break;
+        }
+        if (arn != null) {
+          const node = nodes.get(arn);
+          if (node != null) {
+            node.stackId = stackIdArn;
+            node.stackName = stackName;
+            stacks.set(stackIdArn, {
+              id: stackIdArn,
+              label: stackName,
+              group: Group.CloudFormationStack,
+            });
+          }
+        }
+      }
+    }
+    return stacks;
+  }
+
+  generateEdges(): Map<string, Edge> {
     const inventory = this.context.inventory;
     const edges = new Map<string, Edge>();
 
@@ -248,6 +294,6 @@ export class Generator {
       }
     }
 
-    return [...edges.values()];
+    return edges;
   }
 }

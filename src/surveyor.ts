@@ -1,5 +1,6 @@
 /* eslint-disable max-depth */
 /* eslint-disable no-await-in-loop */
+import * as moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, SNS, SQS } from 'aws-sdk/clients/all';
 import matcher = require('matcher');
 import { AwsUtils } from '../bb-commons/typescript';
@@ -22,9 +23,12 @@ export class Surveyor {
   }
 
   async survey() {
+    const startTime = moment();
+    const shouldSurveyCloudFormation = this.context.options.flags['cloud-formation'];
+    const cfSurvey = shouldSurveyCloudFormation ? this.surveyCloudFormation() : Promise.resolve();
+
     this.context.cliUx.action.start('Surveying API Gateway and SQS', undefined, { stdout: true });
     await Promise.all([
-      // this.surveyCloudFormation(),
       this.surveyApiGateway(),
       this.surveySQS(),
     ]);
@@ -37,6 +41,14 @@ export class Surveyor {
     this.context.cliUx.action.start('Surveying Lambda', undefined, { stdout: true });
     await this.surveyLambda();
     this.context.cliUx.action.stop();
+
+    if (shouldSurveyCloudFormation) {
+      this.context.cliUx.action.start('Waiting for CloudFormation survey to finish', undefined, { stdout: true });
+      await cfSurvey;
+      this.context.cliUx.action.stop();
+    }
+    const duration = moment.duration(moment().diff(startTime));
+    this.context.info(`Finished survey in ${duration.as('second')} seconds`);
   }
 
   async surveyApiGateway() {
@@ -63,7 +75,7 @@ export class Surveyor {
         });
       }
     }
-    this.context.debug(`Found ${inventory.apigDomainNamesByName.size}/${domainNameObjects.length} domains in API Gateway`);
+    this.context.info(`Surveyed ${inventory.apigDomainNamesByName.size}/${domainNameObjects.length} domains in API Gateway`);
 
     // REST APIs
     const restApis = await AwsUtils.repeatFetchingItemsByPosition(
@@ -97,7 +109,7 @@ export class Surveyor {
       const restApiDetails = { ...restApi, lambdaFunctionArns, resources: detailedResources };
       inventory.apigApisById.set(restApiId, restApiDetails);
     }
-    this.context.debug(`Found ${restApis.length} APIs in API Gateway`);
+    this.context.info(`Surveyed ${restApis.length} APIs in API Gateway`);
   }
 
   retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(uri?: string): string | null {
@@ -124,7 +136,7 @@ export class Surveyor {
         inventory.sqsQueuesByArn.set(queueArn, queueDetails);
       }
     }
-    this.context.debug(`Found ${inventory.sqsQueuesByArn.size}/${queueUrls.length} queues in SQS`);
+    this.context.info(`Surveyed ${inventory.sqsQueuesByArn.size}/${queueUrls.length} queues in SQS`);
   }
 
   async surveySNS() {
@@ -143,7 +155,7 @@ export class Surveyor {
         inventory.snsTopicsByArn.set(topicArn, topicDetails);
       }
     }
-    this.context.debug(`Found ${inventory.snsTopicsByArn.size}/${topics.length} topics in SNS`);
+    this.context.info(`Surveyed ${inventory.snsTopicsByArn.size}/${topics.length} topics in SNS`);
 
     // subscriptions
     const subscriptions = await AwsUtils.repeatFetchingItemsByNextToken<SNS.Subscription>('Subscriptions',
@@ -166,7 +178,7 @@ export class Surveyor {
         }
       }
     }
-    this.context.debug(`Found ${inventory.snsSubscriptionsByArn.size}/${subscriptions.length} subscriptions in SNS`);
+    this.context.info(`Surveyed ${inventory.snsSubscriptionsByArn.size}/${subscriptions.length} subscriptions in SNS`);
   }
 
   async surveyLambda() {
@@ -198,37 +210,44 @@ export class Surveyor {
         inventory.lambdaFunctionsByArn.set(functionArn, functionDetails);
       }
     }
-    this.context.debug(`Found ${inventory.lambdaFunctionsByArn.size}/${functionConfigurations.length} functions in Lambda`);
+    this.context.info(`Surveyed ${inventory.lambdaFunctionsByArn.size}/${functionConfigurations.length} functions in Lambda`);
   }
 
   async surveyCloudFormation() {
     const inventory = this.context.inventory;
-    const cf = new CloudFormation(this.context.awsOptions);
+    const cf = new CloudFormation({ ...this.context.awsOptions, maxRetries: 6, retryDelayOptions: { base: 600 } });
     const stacks = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackSummary>('StackSummaries',
       pagingParam => cf.listStacks({ ...pagingParam }).promise(),
     );
-    for (const stack of stacks) {
-      if (this.shouldInclude(stack.StackName)) {
-        const resources = new Array<CloudFormation.StackResourceSummary>();
-        /* too time consuming and 400 Throttling: Rate exceeded
+    for (let i = 0; i < stacks.length; i++) {
+      const stack = stacks[i];
+      if (this.shouldInclude(stack.StackId)) {
+        let resources = new Array<CloudFormation.StackResourceSummary>();
         try {
-            resources = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackResourceSummary>('StackResourceSummaries',
-                pagingParam => cf.listStackResources({...pagingParam, StackName: stack.StackName}).promise(),
-            );
-        } catch(e) {
-            if (e.statusCode === 400) {
-                this.context.debug(`Ignore resources of CloudFormation stack: ${e}`);
+          resources = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackResourceSummary>('StackResourceSummaries',
+            pagingParam => cf.listStackResources({ ...pagingParam, StackName: stack.StackId! }).promise(),
+          );
+        } catch (error) {
+          if (error.statusCode === 400) {
+            const msg = `Ignore resources of CloudFormation stack (${i}/${stacks.length}) ${stack.StackId}: ${error}`;
+            if (error.retryable) {
+              const noStackTraceError = error;
+              delete noStackTraceError.stack;
+              this.context.info(msg, noStackTraceError);
             } else {
-                console.log(e);
+              this.context.debug(msg);
             }
+          } else {
+            this.context.info(error);
+          }
         }
-        */
+
         const stackDetails = { ...stack, resources };
         inventory.cfStackByName.set(stack.StackName, stackDetails);
         inventory.cfStackById.set(stack.StackId!, stackDetails);
       }
     }
-    this.context.debug(`Found ${inventory.cfStackByName.size}/${stacks.length} stacks in CloudFormation`);
+    this.context.info(`Surveyed ${inventory.cfStackByName.size}/${stacks.length} stacks in CloudFormation`);
   }
 
   shouldInclude(text: string | null | undefined): boolean {

@@ -8,6 +8,7 @@
 
     <script type="text/javascript" src="nodes.js"></script>
     <script type="text/javascript" src="edges.js"></script>
+    <script type="text/javascript" src="clusters.js"></script>
 
     <style type="text/css">
         #serverless-network {
@@ -58,6 +59,12 @@
                 <label>
                   <input type="checkbox" id="hideDLQ" name="hideDLQ" value="hideDLQ" />
                   Hide DLQs in SQS
+                </label>
+            </div>
+            <div>
+                <label>
+                  <input type="checkbox" id="clusterByCfStacks" name="clusterByCfStacks" value="clusterByCfStacks" />
+                  Cluster by CloudFormation stacks
                 </label>
             </div>
         </div>
@@ -136,16 +143,18 @@
             edges: edgesView,
         };
         var options = {
-            /*
+            
             configure: {
                 enabled: true,
                 filter: 'physics, layout, nodes, edges, network',
                 showButton: true
-            },*/
+            },
             physics: {
                 barnesHut: {
                     centralGravity: 0.08,
                     damping: 0.65,
+                    springLength: 120,
+                    avoidOverlap: 0.5,
                 },
             },
             nodes: {
@@ -176,7 +185,19 @@
                 BasePath: {
                     shape: 'box',
                     color:{background:'#eed7f5'}
-                }
+                },
+                CfStack: {
+                    // image: 'img/CloudFormation_Stack.svg',
+                    shape: 'box',
+                    margin: 12,
+                    color:{
+                        background:'#7cbbff',
+                    },
+                    size: 40,
+                    font: {
+                        size: 18,
+                    }
+                },
             },
             edges: {
                 color: {
@@ -194,6 +215,34 @@
 
         document.getElementById('disablePhysics').addEventListener("change", function(e) {
             network.setOptions( { physics: !e.target.checked } );
+        });
+
+        if (cfStackClusters.length === 0) {
+            document.getElementById('clusterByCfStacks').parentElement.style.display = 'none';
+        }
+        document.getElementById('clusterByCfStacks').addEventListener("change", function(e) {
+            var clusterOptionsByData;
+            for (var i = 0; i < cfStackClusters.length; i++) {
+                var stack = cfStackClusters[i];
+                if (e.target.checked) {
+                    clusterOptionsByData = {
+                        joinCondition: function (childOptions) {
+                            return childOptions.stackId === stack.id;
+                        },
+                        clusterNodeProperties: {
+                            allowSingleNodeCluster: true,
+                            id: stack.id,
+                            label: stack.label,
+                            group: stack.group,
+                        },
+                    };
+                    network.cluster(clusterOptionsByData);
+                } else {
+                    if (network.isCluster(stack.id)) {
+                        network.openCluster(stack.id);
+                    }
+                }
+            }
         });
 
         for (var toggle of ['hideOrphan', 'hideDLQ', 'hideApiGateway', 'hideMessaging']) {
