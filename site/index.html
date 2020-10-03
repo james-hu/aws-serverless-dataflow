@@ -139,13 +139,13 @@
             /*
             configure: {
                 enabled: true,
-                filter: 'physics, layout, nodes, edges',
+                filter: 'physics, layout, nodes, edges, network',
                 showButton: true
             },*/
             physics: {
                 barnesHut: {
-                    centralGravity: 0.1,
-                    damping: 0.62,
+                    centralGravity: 0.08,
+                    damping: 0.65,
                 },
             },
             nodes: {
@@ -185,6 +185,9 @@
                     highlight: '#1e66d4',
                     hover: '#1e66d4'
                 },
+                smooth: {
+                    type: 'continuous'
+                }
             }
         };
         var network = new vis.Network(container, data, options);
