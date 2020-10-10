@@ -10,7 +10,8 @@ class AwsServerlessDataflow extends Command {
   static description = 'Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow\n' +
     `This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow.
 It generates website files locally and can optionally launch a local server for you to preview.
-Before running this tool, you need to log into your AWS account (through command line like aws, saml2aws, okta-aws, etc.) first.`;
+Before running this tool, you need to log into your AWS account (through command line like aws, saml2aws, okta-aws, etc.) first.
+This tool is free and open source: https://github.com/james-hu/aws-serverless-dataflow`;
 
   static flags = {
     version: flags.version({ char: 'v' }),

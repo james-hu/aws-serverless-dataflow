@@ -14,10 +14,10 @@ Typical usage:
 
 ```sh-session
 $ npx aws-serverless-dataflow -r ap-southeast-2 -s
-npx: installed 127 in 11.303s
-Suveying API Gateway and SQS... done
-Suveying SNS... done
-Suveying Lambda... done
+(1/4) Surveying API Gateway and SQS... done
+(2/4) Surveying SNS... done
+(3/4) Surveying Lambda... done
+(4/4) Surveying S3... done
 Generating static website content in 'dataflow'... done
 Local server started. Ctrl-C to stop. Access URL: http://localhost:8002/
 ```
@@ -85,4 +85,5 @@ By passing `-h` or `--help` to the command line, you can see all supported argum
   This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow.
   It generates website files locally and can optionally launch a local server for you to preview.
   Before running this tool, you need to log into your AWS account (through command line like aws, saml2aws, okta-aws, etc.) first.
+  This tool is free and open source: https://github.com/james-hu/aws-serverless-dataflow`
 ```
