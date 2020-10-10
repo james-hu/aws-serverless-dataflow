@@ -12,7 +12,9 @@
 
     <style type="text/css">
         #serverless-network {
-            width: 100%;
+            width: -webkit-calc(100% - 10px);
+            width:    -moz-calc(100% - 10px);
+            width:         calc(100% - 10px);
             height: 800px;
             border: 1px solid lightgray;
         }
@@ -145,7 +147,7 @@
         var options = {
             
             configure: {
-                enabled: true,
+                enabled: false,
                 filter: 'physics, layout, nodes, edges, network',
                 showButton: true
             },
@@ -166,12 +168,20 @@
             groups: {
                 SnsTopic: {
                     image: 'img/SNS_Topic.svg',
-                    color:{background:'#f2e97e'},
+                    color:{background:'#d6dfff'},
                     size: 30
                 },
                 SqsQueue: {
                     image: 'img/SQS_Queue.svg',
                     color:{background:'#cff7b5'}
+                },
+                S3Bucket: {
+                    image: 'img/S3_Bucket.svg',
+                    color:{background:'#c7f4fc'},
+                },
+                DynamoDbTable: {
+                    image: 'img/DynamoDB_Table.svg',
+                    color:{background:'#fcc5f9'},
                 },
                 LambdaFunction: {
                     image: 'img/Lambda_Function.svg',

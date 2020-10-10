@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { AwsUtils } from '../bb-commons/typescript';
@@ -45,6 +46,8 @@ enum Group {
   DomainName = 'DomainName',
   BasePath = 'BasePath',
   CloudFormationStack = 'CfStack',
+  S3Bucket = 'S3Bucket',
+  DynamoDbTable = 'DynamoDbTable',
 }
 
 export class Generator {
@@ -132,6 +135,26 @@ export class Generator {
       }
     }
 
+    // S3 buckets' notification configurations
+    for (const bucket of inventory.s3BucketsByArn.values()) {
+      if (bucket.notifyLambdaFunctionArns.size > 0 || bucket.notifySqsQueueArns.size > 0 || bucket.notifySnsTopicArns.size > 0) {
+        nodes.set(bucket.bucketArn, {
+          id: bucket.bucketArn,
+          label: `bucket:\n${bucket.Name}`,
+          group: Group.S3Bucket,
+        });
+      }
+    }
+
+    // DynamoDb tables configured in Lambda function's event source mappings
+    for (const table of inventory.dynamoDbTablesByArn.values()) {
+      nodes.set(table.arn, {
+        id: table.arn,
+        label: `DynamoDB table:\n${table.TableName}`,
+        group: Group.DynamoDbTable,
+      });
+    }
+
     return nodes;
   }
 
@@ -147,13 +170,19 @@ export class Generator {
         let arn: string|null|undefined = null;
         switch (resource.ResourceType) {
         case 'AWS::Lambda::Function':
-          arn = `arn:aws:lambda:${stackArn?.region}:${stackArn?.accountId}:function:${resource.PhysicalResourceId}`;
+          arn = `arn:${stackArn?.partition}:lambda:${stackArn?.region}:${stackArn?.accountId}:function:${resource.PhysicalResourceId}`;
           break;
         case 'AWS::SQS::Queue':
           arn = inventory.sqsQueuesByUrl.get(resource.PhysicalResourceId!)?.QueueArn;
           break;
         case 'AWS::SNS::Topic':
           arn = resource.PhysicalResourceId!;
+          break;
+        case 'AWS::DynamoDB::Table':
+          arn = `arn:${stackArn?.partition}:dynamodb:${stackArn?.region}:${stackArn?.accountId}:table/${resource.PhysicalResourceId}`;
+          break;
+        case 'AWS::S3::Bucket':
+          arn = `arn::s3:::${resource.PhysicalResourceId}`; // this is not the actual ARN but is consistent with surveyor.ts
           break;
         }
         if (arn != null) {
@@ -216,6 +245,17 @@ export class Generator {
           edges.set(id, {
             from: lambdaArn.arn,
             to: mapping.sqsQueue.QueueArn,
+            relation: Relation.Consumer,
+            arrows: Arrows.From,
+            dashes: !stateIsEnabled,
+            stateIsEnabled,
+          });
+        }
+        if (mapping.dynamoDbTable) {
+          const id = `${lambdaArn.arn}->${mapping.dynamoDbTable.arn}`;
+          edges.set(id, {
+            from: lambdaArn.arn,
+            to: mapping.dynamoDbTable.arn,
             relation: Relation.Consumer,
             arrows: Arrows.From,
             dashes: !stateIsEnabled,
@@ -291,6 +331,20 @@ export class Generator {
             });
           }
         }
+      }
+    }
+
+    // S3 buckets' notification configurations
+    for (const bucket of inventory.s3BucketsByArn.values()) {
+      for (const consumerArn of [...bucket.notifyLambdaFunctionArns, ...bucket.notifySnsTopicArns, ...bucket.notifySqsQueueArns]) {
+        const bucketArn = bucket.bucketArn;
+        const id = `${consumerArn}->${bucketArn}`;
+        edges.set(id, {
+          from: consumerArn,
+          to: bucketArn,
+          relation: Relation.Consumer,
+          arrows: Arrows.From,
+        });
       }
     }
 

@@ -1,7 +1,7 @@
 /* eslint-disable max-depth */
 /* eslint-disable no-await-in-loop */
 import * as moment from 'moment';
-import { APIGateway, CloudFormation, Lambda, SNS, SQS } from 'aws-sdk/clients/all';
+import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import matcher = require('matcher');
 import { AwsUtils } from '../bb-commons/typescript';
 import { Context } from './context';
@@ -25,25 +25,30 @@ export class Surveyor {
   async survey() {
     const startTime = moment();
     const shouldSurveyCloudFormation = this.context.options.flags['cloud-formation'];
+    const phases = shouldSurveyCloudFormation ? 5 : 4;
     const cfSurvey = shouldSurveyCloudFormation ? this.surveyCloudFormation() : Promise.resolve();
 
-    this.context.cliUx.action.start('Surveying API Gateway and SQS', undefined, { stdout: true });
+    this.context.cliUx.action.start(`(1/${phases}) Surveying API Gateway and SQS`, undefined, { stdout: true });
     await Promise.all([
       this.surveyApiGateway(),
       this.surveySQS(),
     ]);
     this.context.cliUx.action.stop();
 
-    this.context.cliUx.action.start('Surveying SNS', undefined, { stdout: true });
+    this.context.cliUx.action.start(`(2/${phases}) Surveying SNS`, undefined, { stdout: true });
     await this.surveySNS();
     this.context.cliUx.action.stop();
 
-    this.context.cliUx.action.start('Surveying Lambda', undefined, { stdout: true });
+    this.context.cliUx.action.start(`(3/${phases}) Surveying Lambda`, undefined, { stdout: true });
     await this.surveyLambda();
     this.context.cliUx.action.stop();
 
+    this.context.cliUx.action.start(`(4/${phases}) Surveying S3`, undefined, { stdout: true });
+    await this.surveyS3();
+    this.context.cliUx.action.stop();
+
     if (shouldSurveyCloudFormation) {
-      this.context.cliUx.action.start('Waiting for CloudFormation survey to finish', undefined, { stdout: true });
+      this.context.cliUx.action.start(`(5/${phases}) Waiting for CloudFormation survey to finish`, undefined, { stdout: true });
       await cfSurvey;
       this.context.cliUx.action.stop();
     }
@@ -113,10 +118,10 @@ export class Surveyor {
   }
 
   retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(uri?: string): string | null {
-    if (!uri || !uri.includes('/functions/arn:aws:lambda:') || !uri.endsWith('/invocations')) {
+    if (!uri || !uri.match(/\/functions\/arn:.*:lambda:/) || !uri.endsWith('/invocations')) {
       return null;
     }
-    return uri.replace(/.*\/functions\/arn:aws:lambda:/, 'arn:aws:lambda:').replace(/\/invocations$/, '');
+    return uri.replace(/.*\/functions\/arn:/, 'arn:').replace(/\/invocations$/, '');
   }
 
   async surveySQS() {
@@ -181,6 +186,32 @@ export class Surveyor {
     this.context.info(`Surveyed ${inventory.snsSubscriptionsByArn.size}/${subscriptions.length} subscriptions in SNS`);
   }
 
+  async surveyS3() {
+    const inventory = this.context.inventory;
+    const s3 = new S3(this.context.awsOptions);
+
+    const buckets = (await s3.listBuckets().promise()).Buckets ?? [];
+    for (const bucket of buckets) {
+      if (this.shouldInclude(bucket.Name)) {
+        const bucketName = bucket.Name!;
+        const bucketArn = `arn::s3:::${bucketName}`;  // this is not the real ARN but should work for our purpose
+        const notificationConfiguration = await s3.getBucketNotificationConfiguration({ Bucket: bucketName }).promise();
+        const notifyLambdaFunctionArns = new Set((notificationConfiguration.LambdaFunctionConfigurations ?? []).map(c => c.LambdaFunctionArn).filter(arn => inventory.lambdaFunctionsByArn.has(arn)));
+        const notifySqsQueueArns = new Set((notificationConfiguration.QueueConfigurations ?? []).map(c => c.QueueArn).filter(arn => inventory.sqsQueuesByArn.has(arn)));
+        const notifySnsTopicArns = new Set((notificationConfiguration.TopicConfigurations ?? []).map(c => c.TopicArn).filter(arn => inventory.snsTopicsByArn.has(arn)));
+
+        inventory.s3BucketsByArn.set(bucketArn, { ...bucket,
+          bucketArn,
+          notificationConfiguration,
+          notifyLambdaFunctionArns,
+          notifySqsQueueArns,
+          notifySnsTopicArns,
+        });
+      }
+    }
+    this.context.info(`Surveyed ${inventory.s3BucketsByArn.size}/${buckets.length} buckets in S3`);
+  }
+
   async surveyLambda() {
     const inventory = this.context.inventory;
     const lambda = new Lambda(this.context.awsOptions);
@@ -196,15 +227,25 @@ export class Surveyor {
         const detailedEventSourceMappings = eventSourceMappings.map(mapping => {
           let snsTopic;
           let sqsQueue;
+          let dynamoDbTable;
           const eventArn = mapping.EventSourceArn;
-          if (eventArn?.startsWith('arn:aws:sns:')) {
+          if (eventArn?.includes(':sns:')) {
             snsTopic = inventory.snsTopicsByArn.get(eventArn);
-          } else if (eventArn?.startsWith('arn:aws:sqs:')) {
+          } else if (eventArn?.includes(':sqs:')) {
             sqsQueue = inventory.sqsQueuesByArn.get(eventArn);
+          } else if (eventArn?.includes(':dynamodb:')) {
+            const tableArn = AwsUtils.parseArn(eventArn.replace(/\/stream\/.*/, ''));
+            if (tableArn) {
+              dynamoDbTable = {
+                arn: tableArn.arn,
+                TableName: tableArn!.resourceId!,
+              };
+              inventory.dynamoDbTablesByArn.set(dynamoDbTable.arn, dynamoDbTable);
+            }
           } else {
             this.context.debug(`Ignore event source ${eventArn} for Lambda function ${functionConfiguration.FunctionName}`);
           }
-          return { ...mapping, snsTopic, sqsQueue };
+          return { ...mapping, snsTopic, sqsQueue, dynamoDbTable };
         });
         const functionDetails = { ...functionConfiguration, eventSourceMappings: detailedEventSourceMappings };
         inventory.lambdaFunctionsByArn.set(functionArn, functionDetails);
