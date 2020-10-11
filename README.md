@@ -39,7 +39,7 @@ A resource would be included if any of the `--include` wild card patterns matche
 `-c` or `--cloud-formation` would enable clustering resouces by CloudFormation stacks.
 It is useful when you would like to have a high level view.
 
-## Usage
+## Quick start
 
 You can have it installed globally like this:
 
@@ -58,32 +58,62 @@ $ npx aws-serverless-dataflow ...
 
 By passing `-h` or `--help` to the command line, you can see all supported arguments and options.
 
-## Arguments
+## Manual
 
-```sh-session
+<!-- help start -->
+```
+USAGE
+  $ aws-serverless-dataflow [PATH]
+
+ARGUMENTS
   PATH  [default: dataflow] path for putting generated website files
-```
 
-## Options
+OPTIONS
+  -c, --cloud-formation  survey CloudFormation stack information (this takes
+                         more time)
 
-```sh-session
-  -c, --cloud-formation  survey CloudFormation stack information (this takes more time)
   -d, --debug            output debug messages
+
   -h, --help             show CLI help
-  -i, --include=include  [default: *] wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be includeed
-  -p, --port=port        [default: 8002] port number of the local http server for preview
+
+  -i, --include=include  [default: *] wildcard patterns for domain names and ARN
+                         of Lambda functions/SNS topics/SQS queues that should
+                         be includeed
+
+  -p, --port=port        [default: 8002] port number of the local http server
+                         for preview
+
   -q, --quiet            no console output
+
   -r, --region=region    AWS region
-  -s, --server           start a local http server and open a browser for pre-viewing generated website
+
+  -s, --server           start a local http server and open a browser for
+                         pre-viewing generated website
+
   -v, --version          show CLI version
-  -x, --exclude=exclude  wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be excluded
+
+  -x, --exclude=exclude  wildcard patterns for domain names and ARN of Lambda
+                         functions/SNS topics/SQS queues that should be excluded
+
+DESCRIPTION
+  This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, 
+  SQS, etc.) dataflow. It generates website files locally and can optionally 
+  launch a local server for you to preview.
+
+  Before running this tool, you need to log into your AWS account (through 
+  command line like aws, saml2aws, okta-aws, etc.) first. 
+
+  This tool is free and open source: 
+  https://github.com/james-hu/aws-serverless-dataflow
+
+EXAMPLES
+  aws-serverless-dataflow -r ap-southeast-2 -s
+  aws-serverless-dataflow -r ap-southeast-2 -s -i '*boi*' -i '*datahub*' \
+         -x '*jameshu*' -c
+  aws-serverless-dataflow -r ap-southeast-2 -s -i '*lr-*' \
+         -i '*lead*' -x '*slack*' -x '*lead-prioritization*' \
+         -x '*lead-scor*' -x '*LeadCapture*' -c
 ```
 
-## Description
+<!-- help end -->
 
-```sh-session
-  This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow.
-  It generates website files locally and can optionally launch a local server for you to preview.
-  Before running this tool, you need to log into your AWS account (through command line like aws, saml2aws, okta-aws, etc.) first.
-  This tool is free and open source: https://github.com/james-hu/aws-serverless-dataflow`
-```

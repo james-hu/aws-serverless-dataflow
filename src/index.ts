@@ -4,18 +4,20 @@ import { Context } from './context';
 import { Generator } from './generator';
 import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
+import { OclifUtils } from '../bb-commons/typescript';
 
 class AwsServerlessDataflow extends Command {
   static Options: CommandOptions<typeof AwsServerlessDataflow>  // just to hold the type
   static description = 'Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow\n' +
-    `This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow.
-It generates website files locally and can optionally launch a local server for you to preview.
-Before running this tool, you need to log into your AWS account (through command line like aws, saml2aws, okta-aws, etc.) first.
-This tool is free and open source: https://github.com/james-hu/aws-serverless-dataflow`;
+    `This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow. 
+It generates website files locally and can optionally launch a local server for you to preview.`.replace(/\n/g, '') +
+`\n\nBefore running this tool, you need to log into your AWS account (through command line like aws, saml2aws, okta-aws, etc.) first. 
+\nThis tool is free and open source: https://github.com/james-hu/aws-serverless-dataflow`;
 
   static flags = {
     version: flags.version({ char: 'v' }),
     help: flags.help({ char: 'h' }),
+    'update-readme.md': flags.boolean({ hidden: true, description: 'For developers only, don\'t use' }),
 
     region: flags.string({ char: 'r', description: 'AWS region' }),
 
@@ -29,14 +31,32 @@ This tool is free and open source: https://github.com/james-hu/aws-serverless-da
 
     quiet: flags.boolean({ char: 'q', description: 'no console output' }),
     debug: flags.boolean({ char: 'd', description: 'output debug messages' }),
-  }
+  };
 
   static args = [
     { name: 'path' as const, default: 'dataflow', description: 'path for putting generated website files' },
-  ]
+  ];
+
+  static examples = [
+    '^ -r ap-southeast-2 -s',
+    `^ -r ap-southeast-2 -s -i '*boi*' -i '*datahub*' \\
+      -x '*jameshu*' -c`,
+    `^ -r ap-southeast-2 -s -i '*lr-*' \\
+      -i '*lead*' -x '*slack*' -x '*lead-prioritization*' \\
+      -x '*lead-scor*' -x '*LeadCapture*' -c`,
+  ];
+
+  protected async init() {
+    OclifUtils.prependCliToExamples(this);
+    return super.init();
+  }
 
   async run(argv?: string[]) {
     const options = this.parse<CommandFlags<typeof AwsServerlessDataflow>, CommandArgs<typeof AwsServerlessDataflow>>(AwsServerlessDataflow, argv);
+    if (options.flags['update-readme.md']) {
+      OclifUtils.injectHelpTextIntoReadmeMd(this);
+      return;
+    }
     const context = new Context(options);
     context.debug('Options: ', options);
 
