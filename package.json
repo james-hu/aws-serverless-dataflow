@@ -81,9 +81,9 @@
   "repository": "james-hu/aws-serverless-dataflow",
   "scripts": {
     "posttest": "eslint . --ext .ts --config .eslintrc",
-    "prepack": "rm -rf lib && tsc -b && ./bin/run --update-readme.md",
+    "prepack": "rm -rf lib && tsc -b",
     "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
-    "version": "oclif-dev readme && git add README.md"
+    "version": "./bin/run --update-readme.md && git add README.md"
   },
   "types": "lib/index.d.ts"
 }
