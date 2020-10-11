@@ -85,7 +85,8 @@ OPTIONS
 
   -q, --quiet            no console output
 
-  -r, --region=region    AWS region
+  -r, --region=region    AWS region (required if you don't have AWS_REGION
+                         environment variable configured)
 
   -s, --server           start a local http server and open a browser for
                          pre-viewing generated website
@@ -117,3 +118,9 @@ EXAMPLES
 
 <!-- help end -->
 
+## For developers
+
+* Run for test: `./bin/run ...`
+* After changing code in `bb-common/`: `npx tsc -b`
+* Update README.md: `./bin/run --update-readme.md`
+* Release: `npm version patch -m "..."; npm publish`

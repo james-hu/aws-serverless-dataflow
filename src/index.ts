@@ -19,7 +19,7 @@ It generates website files locally and can optionally launch a local server for 
     help: flags.help({ char: 'h' }),
     'update-readme.md': flags.boolean({ hidden: true, description: 'For developers only, don\'t use' }),
 
-    region: flags.string({ char: 'r', description: 'AWS region' }),
+    region: flags.string({ char: 'r', description: 'AWS region (required if you don\'t have AWS_REGION environment variable configured)' }),
 
     include: flags.string({ char: 'i', default: ['*'], multiple: true, description: 'wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be includeed' }),
     exclude: flags.string({ char: 'x', multiple: true, description: 'wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be excluded' }),
