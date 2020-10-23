@@ -74,6 +74,7 @@
       "@oclif/plugin-warn-if-update-available"
     ],
     "warn-if-update-available": {
+      "registry": "https://registry.npm.taobao.org/",
       "timeoutInDays": 7,
       "message": "<%= config.name %> update available from <%= chalk.greenBright(config.version) %> to <%= chalk.greenBright(latest) %>."
     }
