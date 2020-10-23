@@ -10,3 +10,4 @@ node_modules
 dataflow
 package
 tsconfig.tsbuildinfo
+browser-utils.js

@@ -76,7 +76,6 @@ export class Generator {
       fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], null, 2)),
       fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], null, 2)),
     ]);
-    await fs.emptyDir(destJsDir);
     await fs.copy(srcVisNetworkJsFile, destVisNetworkJsFile);
 
     this.context.cliUx.action.stop();

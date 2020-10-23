@@ -2,24 +2,15 @@
 /* eslint-disable no-await-in-loop */
 import * as moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
-import matcher = require('matcher');
 import { AwsUtils } from '../bb-commons/typescript';
 import { Context } from './context';
+import buildIncludeExcludeMatcher from './matcher';
 
 export class Surveyor {
-  private matchPatterns = new Array<string[]>();
+  shouldInclude: (text: string | null | undefined) => boolean;
 
   constructor(private context: Context) {
-    const include = this.context.options.flags.include ?? [];
-    const exclude = this.context.options.flags.exclude ?? [];
-    const allExcludes = exclude.map(p => `!${p}`);
-    if (include.length === 0) {
-      this.matchPatterns.push(allExcludes);
-    } else {
-      for (const inc of include) {
-        this.matchPatterns.push([inc, ...allExcludes]);
-      }
-    }
+    this.shouldInclude = buildIncludeExcludeMatcher(this.context.options.flags.include, this.context.options.flags.exclude);
   }
 
   async survey() {
@@ -289,17 +280,5 @@ export class Surveyor {
       }
     }
     this.context.info(`Surveyed ${inventory.cfStackByName.size}/${stacks.length} stacks in CloudFormation`);
-  }
-
-  shouldInclude(text: string | null | undefined): boolean {
-    if (!text) {
-      return false;
-    }
-    for (const patterns of this.matchPatterns) {
-      if (matcher.isMatch(text, patterns)) {
-        return true;    // matched by any include and all excludes
-      }
-    }
-    return false;
   }
 }
