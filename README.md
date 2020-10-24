@@ -36,6 +36,10 @@ you can use `--include` and `--exclude` options to specify which to include and 
 Both of them can have multiple appearances.
 A resource would be included if any of the `--include` wild card patterns matches and none of the `--include` wild card patterns matches.
 
+It may take a while for this tool to survey all relevant resources in your AWS account.
+To make it faster, you can try to increase parallelism by changing `--parallelism`/`-l` option which by default is 8.
+If you see `TooManyRequestsException: Rate exceeded` error, you can try decreasing it.
+
 `-c` or `--cloud-formation` would enable clustering resouces by CloudFormation stacks.
 It is useful when you would like to have a high level view.
 

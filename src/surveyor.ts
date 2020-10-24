@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 import * as moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
-import { AwsUtils } from '../bb-commons/typescript';
+import { AwsUtils, Utils } from '../bb-commons/typescript';
 import { Context } from './context';
 import buildIncludeExcludeMatcher from './matcher';
 
@@ -48,6 +48,7 @@ export class Surveyor {
   }
 
   async surveyApiGateway() {
+    const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const apig = new APIGateway(this.context.awsOptions);
 
@@ -55,7 +56,7 @@ export class Surveyor {
     const domainNameObjects = await AwsUtils.repeatFetchingItemsByPosition(
       pagingParam => apig.getDomainNames({ limit: 100, ...pagingParam }).promise(),
     );
-    for (const domainNameObj of domainNameObjects) {
+    await Utils.inParallel(parallelism, domainNameObjects, async domainNameObj => {
       const domainName = domainNameObj.domainName!;
       if (this.shouldInclude(domainName)) {
         const mappings = await AwsUtils.repeatFetchingItemsByPosition(
@@ -70,14 +71,14 @@ export class Surveyor {
           }),
         });
       }
-    }
+    });
     this.context.info(`Surveyed ${inventory.apigDomainNamesByName.size}/${domainNameObjects.length} domains in API Gateway`);
 
     // REST APIs
     const restApis = await AwsUtils.repeatFetchingItemsByPosition(
       pagingParam => apig.getRestApis({ limit: 100, ...pagingParam }).promise(),
     );
-    for (const restApi of restApis) {
+    await Utils.inParallel(parallelism, restApis, async restApi => {
       const restApiId = restApi.id!;
 
       const resources = await AwsUtils.repeatFetchingItemsByPosition(
@@ -104,7 +105,7 @@ export class Surveyor {
       }
       const restApiDetails = { ...restApi, lambdaFunctionArns, resources: detailedResources };
       inventory.apigApisById.set(restApiId, restApiDetails);
-    }
+    });
     this.context.info(`Surveyed ${restApis.length} APIs in API Gateway`);
   }
 
@@ -116,13 +117,14 @@ export class Surveyor {
   }
 
   async surveySQS() {
+    const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const sqs = new SQS(this.context.awsOptions);
 
     const queueUrls = await AwsUtils.repeatFetchingItemsByNextToken<string>('QueueUrls',
       pagingParam => sqs.listQueues({ ...pagingParam }).promise(),
     );
-    for (const queueUrl of queueUrls) {
+    await Utils.inParallel(parallelism, queueUrls, async queueUrl => {
       const queueAttributes = (await sqs.getQueueAttributes({ QueueUrl: queueUrl, AttributeNames: ['All'] }).promise()).Attributes!;
       queueAttributes.QueueUrl = queueUrl;    // add this for convenience
       const queueDetails = { ...queueAttributes, subscriptions: [] } as any;
@@ -131,11 +133,12 @@ export class Surveyor {
         inventory.sqsQueuesByUrl.set(queueUrl, queueDetails);
         inventory.sqsQueuesByArn.set(queueArn, queueDetails);
       }
-    }
+    });
     this.context.info(`Surveyed ${inventory.sqsQueuesByArn.size}/${queueUrls.length} queues in SQS`);
   }
 
   async surveySNS() {
+    const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const sns = new SNS(this.context.awsOptions);
 
@@ -144,20 +147,20 @@ export class Surveyor {
       pagingParam => sns.listTopics({ ...pagingParam }).promise(),
     );
     const topicArns = topics.map(topic => topic.TopicArn!);
-    for (const topicArn of topicArns) {
+    await Utils.inParallel(parallelism, topicArns, async topicArn => {
       const topicAttributes = (await sns.getTopicAttributes({ TopicArn: topicArn }).promise()).Attributes!;
       const topicDetails = { ...topicAttributes, subscriptions: [] } as any;
       if (this.shouldInclude(topicArn)) {
         inventory.snsTopicsByArn.set(topicArn, topicDetails);
       }
-    }
+    });
     this.context.info(`Surveyed ${inventory.snsTopicsByArn.size}/${topics.length} topics in SNS`);
 
     // subscriptions
     const subscriptions = await AwsUtils.repeatFetchingItemsByNextToken<SNS.Subscription>('Subscriptions',
       pagingParam => sns.listSubscriptions({ ...pagingParam }).promise(),
     );
-    for (const subscription of subscriptions) {
+    await Utils.inParallel(parallelism, subscriptions, async subscription => {
       const subscriptionArn = subscription.SubscriptionArn!;
       if (this.shouldInclude(subscription.TopicArn)) {
         try {
@@ -173,16 +176,17 @@ export class Surveyor {
           }
         }
       }
-    }
+    });
     this.context.info(`Surveyed ${inventory.snsSubscriptionsByArn.size}/${subscriptions.length} subscriptions in SNS`);
   }
 
   async surveyS3() {
+    const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const s3 = new S3(this.context.awsOptions);
 
     const buckets = (await s3.listBuckets().promise()).Buckets ?? [];
-    for (const bucket of buckets) {
+    await Utils.inParallel(parallelism, buckets, async bucket => {
       if (this.shouldInclude(bucket.Name)) {
         const bucketName = bucket.Name!;
         const bucketArn = `arn::s3:::${bucketName}`;  // this is not the real ARN but should work for our purpose
@@ -199,17 +203,19 @@ export class Surveyor {
           notifySnsTopicArns,
         });
       }
-    }
+    });
     this.context.info(`Surveyed ${inventory.s3BucketsByArn.size}/${buckets.length} buckets in S3`);
   }
 
   async surveyLambda() {
+    const parallelism = 1 + Math.floor(Math.sqrt(Math.sqrt(this.context.options.flags.parallelism)) / 1.4);
+    // console.log(`surveyLambda() parallelism: ${parallelism}`);
     const inventory = this.context.inventory;
     const lambda = new Lambda(this.context.awsOptions);
     const functionConfigurations = await AwsUtils.repeatFetchingItemsByMarker<Lambda.FunctionConfiguration>('Functions',
       pagingParam => lambda.listFunctions({ ...pagingParam }).promise()
     );
-    for (const functionConfiguration of functionConfigurations) {
+    await Utils.inParallel(parallelism, functionConfigurations, async functionConfiguration => {
       const functionArn = functionConfiguration.FunctionArn!;
       if (this.shouldInclude(functionArn)) {
         const eventSourceMappings = await AwsUtils.repeatFetchingItemsByMarker<Lambda.EventSourceMappingConfiguration>('EventSourceMappings',
@@ -241,7 +247,7 @@ export class Surveyor {
         const functionDetails = { ...functionConfiguration, eventSourceMappings: detailedEventSourceMappings };
         inventory.lambdaFunctionsByArn.set(functionArn, functionDetails);
       }
-    }
+    });
     this.context.info(`Surveyed ${inventory.lambdaFunctionsByArn.size}/${functionConfigurations.length} functions in Lambda`);
   }
 
