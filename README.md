@@ -73,32 +73,36 @@ ARGUMENTS
   PATH  [default: dataflow] path for putting generated website files
 
 OPTIONS
-  -c, --cloud-formation  survey CloudFormation stack information (this takes
-                         more time)
+  -c, --cloud-formation          survey CloudFormation stack information (this
+                                 takes more time)
 
-  -d, --debug            output debug messages
+  -d, --debug                    output debug messages
 
-  -h, --help             show CLI help
+  -h, --help                     show CLI help
 
-  -i, --include=include  [default: *] wildcard patterns for domain names and ARN
-                         of Lambda functions/SNS topics/SQS queues that should
-                         be includeed
+  -i, --include=include          [default: *] wildcard patterns for domain names
+                                 and ARN of Lambda functions/SNS topics/SQS
+                                 queues that should be includeed
 
-  -p, --port=port        [default: 8002] port number of the local http server
-                         for preview
+  -l, --parallelism=parallelism  [default: 8] approximately how many AWS API
+                                 calls are allowed at the same time
 
-  -q, --quiet            no console output
+  -p, --port=port                [default: 8002] port number of the local http
+                                 server for preview
 
-  -r, --region=region    AWS region (required if you don't have AWS_REGION
-                         environment variable configured)
+  -q, --quiet                    no console output
 
-  -s, --server           start a local http server and open a browser for
-                         pre-viewing generated website
+  -r, --region=region            AWS region (required if you don't have
+                                 AWS_REGION environment variable configured)
 
-  -v, --version          show CLI version
+  -s, --server                   start a local http server and open a browser
+                                 for pre-viewing generated website
 
-  -x, --exclude=exclude  wildcard patterns for domain names and ARN of Lambda
-                         functions/SNS topics/SQS queues that should be excluded
+  -v, --version                  show CLI version
+
+  -x, --exclude=exclude          wildcard patterns for domain names and ARN of
+                                 Lambda functions/SNS topics/SQS queues that
+                                 should be excluded
 
 DESCRIPTION
   This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, 
