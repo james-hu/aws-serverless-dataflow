@@ -1,7 +1,7 @@
 /* eslint-disable complexity */
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { AwsUtils } from '../bb-commons/typescript';
+import { AwsUtils } from 'handy-common-utils';
 import { Context } from './context';
 
 interface Node {

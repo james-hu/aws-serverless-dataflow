@@ -4,7 +4,7 @@ import { Context } from './context';
 import { Generator } from './generator';
 import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
-import { OclifUtils } from '../bb-commons/typescript';
+import { OclifUtils } from 'handy-common-utils';
 
 class AwsServerlessDataflow extends Command {
   static Options: CommandOptions<typeof AwsServerlessDataflow>  // just to hold the type

@@ -16,6 +16,7 @@
     "aws-sdk": "^2.756.0",
     "cli-ux": "^5.5.0",
     "fs-extra": "^9.0.1",
+    "handy-common-utils": "^1.0.3",
     "matcher": "^3.0.0",
     "moment": "^2.29.0",
     "open": "^7.2.1",

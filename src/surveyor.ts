@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 import * as moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
-import { AwsUtils, Utils } from '../bb-commons/typescript';
+import { AwsUtils, Utils } from 'handy-common-utils';
 import { Context } from './context';
 import buildIncludeExcludeMatcher from './matcher';
 
