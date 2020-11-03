@@ -1,5 +1,5 @@
 import { Context } from './context';
-import * as open from 'open';
+import open from 'open';
 
 export class LocalServer {
   protected server: any;

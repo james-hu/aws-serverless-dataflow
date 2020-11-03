@@ -1,11 +1,10 @@
 import { Command, flags } from '@oclif/command';
-import * as Parser from '@oclif/parser';
 import { Context } from './context';
 import { Generator } from './generator';
 import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
 import { delayedResolve } from '@handy-common-utils/promise-utils';
-import { OclifUtils } from '@handy-common-utils/promise-utils';
+import { CommandArgs, CommandFlags, CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
 
 class AwsServerlessDataflow extends Command {
   static Options: CommandOptions<typeof AwsServerlessDataflow>  // just to hold the type
@@ -77,11 +76,3 @@ It generates website files locally and can optionally launch a local server for 
 }
 
 export = AwsServerlessDataflow
-
-type CommandFlags<T> = T extends Parser.Input<infer F> ? F : never
-type CommandArgNames<T> = T extends { name: infer A }[] ? A : never
-type CommandArgs<T extends { args: Array<{ name: string }> }> = {
-  [x in CommandArgNames<T['args']>]: string;
-}
-type CommandOptions<T extends { args: Array<{ name: string }> }> = Parser.Output<CommandFlags<T>, CommandArgs<T>>
-

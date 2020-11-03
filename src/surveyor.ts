@@ -1,6 +1,6 @@
 /* eslint-disable max-depth */
 /* eslint-disable no-await-in-loop */
-import * as moment from 'moment';
+import moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { AwsUtils } from '@handy-common-utils/aws-utils';
 import { PromiseUtils } from '@handy-common-utils/promise-utils';
