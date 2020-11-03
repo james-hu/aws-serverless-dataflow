@@ -8,15 +8,14 @@
   },
   "bugs": "https://github.com/james-hu/aws-serverless-dataflow/issues",
   "dependencies": {
+    "@handy-common-utils/aws-utils": "^1.0.2",
     "@oclif/command": "^1.8.0",
     "@oclif/config": "^1.17.0",
     "@oclif/plugin-help": "^3.2.0",
     "@oclif/plugin-warn-if-update-available": "^1.7.0",
-    "@unbounce/parse-aws-arn": "^1.2.1",
     "aws-sdk": "^2.756.0",
     "cli-ux": "^5.5.0",
     "fs-extra": "^9.0.1",
-    "handy-common-utils": "^1.0.3",
     "matcher": "^3.0.0",
     "moment": "^2.29.0",
     "open": "^7.2.1",
@@ -25,23 +24,13 @@
     "vis-network": "^8.3.2"
   },
   "devDependencies": {
+    "@handy-common-utils/dev-dependencies": "^1.0.10",
     "@oclif/dev-cli": "^1.22.2",
     "@oclif/test": "^1.2.7",
     "@types/aws-sdk": "^2.7.0",
-    "@types/chai": "^4.2.12",
     "@types/fs-extra": "^9.0.1",
     "@types/matcher": "^2.0.0",
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.6",
-    "browserify": "^17.0.0",
-    "chai": "^4.2.0",
-    "eslint": "^5.16.0",
-    "eslint-config-oclif": "^3.1.0",
-    "eslint-config-oclif-typescript": "^0.1.0",
-    "mocha": "^5.2.0",
-    "nyc": "^14.1.1",
-    "ts-node": "^8.10.2",
-    "typescript": "^3.9.7"
+    "browserify": "^17.0.0"
   },
   "engines": {
     "node": ">=8.0.0"
@@ -83,10 +72,10 @@
   },
   "repository": "james-hu/aws-serverless-dataflow",
   "scripts": {
-    "posttest": "eslint . --ext .ts --config .eslintrc",
-    "prepack": "rm -rf lib && tsc -b && browserify lib/browser-utils.js -o site/js/browser-utils.js",
-    "test": "nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
-    "version": "./bin/run --update-readme.md && git add README.md"
+    "pretest": "eslint . --ext .ts",
+    "test": "nyc mocha -r ts-node/register test/**/*.spec.ts test/**/*.test.ts",
+    "prepare": "shx rm -rf dist lib && tsc && browserify lib/browser-utils.js -o site/js/browser-utils.js",
+    "preversion": "./bin/run --update-readme.md && git add README.md"
   },
   "types": "lib/index.d.ts"
 }

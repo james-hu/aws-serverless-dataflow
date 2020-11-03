@@ -4,7 +4,8 @@ import { Context } from './context';
 import { Generator } from './generator';
 import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
-import { OclifUtils } from 'handy-common-utils';
+import { delayedResolve } from '@handy-common-utils/promise-utils';
+import { OclifUtils } from '@handy-common-utils/promise-utils';
 
 class AwsServerlessDataflow extends Command {
   static Options: CommandOptions<typeof AwsServerlessDataflow>  // just to hold the type
@@ -70,6 +71,7 @@ It generates website files locally and can optionally launch a local server for 
     if (options.flags.server) {
       const server = new LocalServer(context);
       server.start();
+      await delayedResolve(1000);
     }
   }
 }

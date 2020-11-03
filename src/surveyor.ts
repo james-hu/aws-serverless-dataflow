@@ -2,7 +2,8 @@
 /* eslint-disable no-await-in-loop */
 import * as moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
-import { AwsUtils, Utils } from 'handy-common-utils';
+import { AwsUtils } from '@handy-common-utils/aws-utils';
+import { PromiseUtils } from '@handy-common-utils/promise-utils';
 import { Context } from './context';
 import buildIncludeExcludeMatcher from './matcher';
 
@@ -56,7 +57,7 @@ export class Surveyor {
     const domainNameObjects = await AwsUtils.repeatFetchingItemsByPosition(
       pagingParam => apig.getDomainNames({ limit: 100, ...pagingParam }).promise(),
     );
-    await Utils.inParallel(parallelism, domainNameObjects, async domainNameObj => {
+    await PromiseUtils.inParallel(parallelism, domainNameObjects, async domainNameObj => {
       const domainName = domainNameObj.domainName!;
       if (this.shouldInclude(domainName)) {
         const mappings = await AwsUtils.repeatFetchingItemsByPosition(
@@ -78,7 +79,7 @@ export class Surveyor {
     const restApis = await AwsUtils.repeatFetchingItemsByPosition(
       pagingParam => apig.getRestApis({ limit: 100, ...pagingParam }).promise(),
     );
-    await Utils.inParallel(parallelism, restApis, async restApi => {
+    await PromiseUtils.inParallel(parallelism, restApis, async restApi => {
       const restApiId = restApi.id!;
 
       const resources = await AwsUtils.repeatFetchingItemsByPosition(
@@ -124,7 +125,7 @@ export class Surveyor {
     const queueUrls = await AwsUtils.repeatFetchingItemsByNextToken<string>('QueueUrls',
       pagingParam => sqs.listQueues({ ...pagingParam }).promise(),
     );
-    await Utils.inParallel(parallelism, queueUrls, async queueUrl => {
+    await PromiseUtils.inParallel(parallelism, queueUrls, async queueUrl => {
       const queueAttributes = (await sqs.getQueueAttributes({ QueueUrl: queueUrl, AttributeNames: ['All'] }).promise()).Attributes!;
       queueAttributes.QueueUrl = queueUrl;    // add this for convenience
       const queueDetails = { ...queueAttributes, subscriptions: [] } as any;
@@ -147,7 +148,7 @@ export class Surveyor {
       pagingParam => sns.listTopics({ ...pagingParam }).promise(),
     );
     const topicArns = topics.map(topic => topic.TopicArn!);
-    await Utils.inParallel(parallelism, topicArns, async topicArn => {
+    await PromiseUtils.inParallel(parallelism, topicArns, async topicArn => {
       const topicAttributes = (await sns.getTopicAttributes({ TopicArn: topicArn }).promise()).Attributes!;
       const topicDetails = { ...topicAttributes, subscriptions: [] } as any;
       if (this.shouldInclude(topicArn)) {
@@ -160,7 +161,7 @@ export class Surveyor {
     const subscriptions = await AwsUtils.repeatFetchingItemsByNextToken<SNS.Subscription>('Subscriptions',
       pagingParam => sns.listSubscriptions({ ...pagingParam }).promise(),
     );
-    await Utils.inParallel(parallelism, subscriptions, async subscription => {
+    await PromiseUtils.inParallel(parallelism, subscriptions, async subscription => {
       const subscriptionArn = subscription.SubscriptionArn!;
       if (this.shouldInclude(subscription.TopicArn)) {
         try {
@@ -186,7 +187,7 @@ export class Surveyor {
     const s3 = new S3(this.context.awsOptions);
 
     const buckets = (await s3.listBuckets().promise()).Buckets ?? [];
-    await Utils.inParallel(parallelism, buckets, async bucket => {
+    await PromiseUtils.inParallel(parallelism, buckets, async bucket => {
       if (this.shouldInclude(bucket.Name)) {
         const bucketName = bucket.Name!;
         const bucketArn = `arn::s3:::${bucketName}`;  // this is not the real ARN but should work for our purpose
@@ -213,13 +214,13 @@ export class Surveyor {
     const inventory = this.context.inventory;
     const lambda = new Lambda(this.context.awsOptions);
     const functionConfigurations = await AwsUtils.repeatFetchingItemsByMarker<Lambda.FunctionConfiguration>('Functions',
-      pagingParam => lambda.listFunctions({ ...pagingParam }).promise()
+      pagingParam => lambda.listFunctions({ ...pagingParam }).promise(),
     );
-    await Utils.inParallel(parallelism, functionConfigurations, async functionConfiguration => {
+    await PromiseUtils.inParallel(parallelism, functionConfigurations, async functionConfiguration => {
       const functionArn = functionConfiguration.FunctionArn!;
       if (this.shouldInclude(functionArn)) {
         const eventSourceMappings = await AwsUtils.repeatFetchingItemsByMarker<Lambda.EventSourceMappingConfiguration>('EventSourceMappings',
-          pagingParam => lambda.listEventSourceMappings({ ...pagingParam, FunctionName: functionArn }).promise()
+          pagingParam => lambda.listEventSourceMappings({ ...pagingParam, FunctionName: functionArn }).promise(),
         );
         const detailedEventSourceMappings = eventSourceMappings.map(mapping => {
           let snsTopic;

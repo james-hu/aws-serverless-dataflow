@@ -1,7 +1,7 @@
 /* eslint-disable complexity */
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { AwsUtils } from 'handy-common-utils';
+import { AwsUtils } from '@handy-common-utils/aws-utils';
 import { Context } from './context';
 
 interface Node {
