@@ -129,6 +129,4 @@ EXAMPLES
 ## For developers
 
 * Run for test: `./bin/run ...`
-* After changing code in `bb-common/`: `npx tsc -b`
-* Update README.md: `./bin/run --update-readme.md`
 * Release: `npm version patch -m "..."; npm publish`
