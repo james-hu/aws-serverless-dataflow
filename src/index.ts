@@ -30,7 +30,7 @@ It generates website files locally and can optionally launch a local server for 
     server: flags.boolean({ char: 's', description: 'start a local http server and open a browser for pre-viewing generated website' }),
     port: flags.integer({ char: 'p', default: 8002, description: 'port number of the local http server for preview' }),
 
-    parallelism: flags.integer({ char: 'l', default: 8, description: 'approximately how many AWS API calls are allowed at the same time' }),
+    parallelism: flags.integer({ char: 'l', default: 2, description: 'approximately how many AWS API calls are allowed at the same time' }),
     quiet: flags.boolean({ char: 'q', description: 'no console output' }),
     debug: flags.boolean({ char: 'd', description: 'output debug messages' }),
   };
