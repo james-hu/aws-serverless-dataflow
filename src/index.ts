@@ -1,9 +1,10 @@
+/* eslint-disable no-await-in-loop */
 import { Command, flags } from '@oclif/command';
 import { Context } from './context';
 import { Generator } from './generator';
 import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
-import { delayedResolve } from '@handy-common-utils/promise-utils';
+import { PromiseUtils } from '@handy-common-utils/promise-utils';
 import { CommandArgs, CommandFlags, CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
 
 class AwsServerlessDataflow extends Command {
@@ -58,19 +59,50 @@ It generates website files locally and can optionally launch a local server for 
       OclifUtils.injectHelpTextIntoReadmeMd(this);
       return;
     }
-    const context = new Context(options);
-    context.debug('Options: ', options);
 
+    do {
+      const context = new Context(options);
+      context.debug('Options: ', options);
+
+      try {
+        await this.doRun(context);
+        break;
+      } catch (error) {
+        context.debug(error);
+        if (error.code === 'ExpiredToken') {
+          context.info('Did you forget to log into AWS? Please log into your AWS account and try again.');
+          context.info(`  ${error}`);
+          break;
+        } else if (error.code === 'TooManyRequestsException') {
+          const previousParallelism = options.flags.parallelism;
+          options.flags.parallelism = Math.floor(previousParallelism / 2);
+          if (options.flags.parallelism >= 1) {
+            context.info(`AWS is not able to handle too many requests at the same time. Restarting with parallelism changing from ${previousParallelism} to ${options.flags.parallelism} ...`);
+            context.info('(Parallelism can be specified by -l / --parallelism option)');
+            await PromiseUtils.delayedResolve(3000);
+          } else {
+            context.info('AWS is not able to handle too many requests at the same time. Please try later.');
+            context.info(`  ${error}`);
+            break;
+          }
+        } else {
+          throw error;
+        }
+      }
+    } while (options.flags.parallelism >= 1);
+  }
+
+  protected async doRun(context: Context) {
     const surveyor = new Surveyor(context);
     const generator = new Generator(context);
 
     await surveyor.survey();
     await generator.generate();
 
-    if (options.flags.server) {
+    if (context.options.flags.server) {
       const server = new LocalServer(context);
       server.start();
-      await delayedResolve(1000);
+      await PromiseUtils.delayedResolve(1000);
     }
   }
 }
