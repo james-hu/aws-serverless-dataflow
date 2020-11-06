@@ -288,8 +288,12 @@
                     nodesView.refresh();
                     network.fit();
                 }
-                window[this + 'PreviousValue'] = e.target.value;
             }.bind(id));
+            document.getElementById(id).addEventListener("keyup", function(e) {
+                if (event.key === "Enter") {
+                    e.target.blur();
+                }
+            });
         }
     </script>
 </body>
