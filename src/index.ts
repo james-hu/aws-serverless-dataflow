@@ -8,7 +8,7 @@ import { PromiseUtils } from '@handy-common-utils/promise-utils';
 import { CommandArgs, CommandFlags, CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
 
 class AwsServerlessDataflow extends Command {
-  static Options: CommandOptions<typeof AwsServerlessDataflow>  // just to hold the type
+  static Options: CommandOptions<typeof AwsServerlessDataflow>;  // just to hold the type
   static description = 'Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow\n' +
     `This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow. 
 It generates website files locally and can optionally launch a local server for you to preview.`.replace(/\n/g, '') +
@@ -30,7 +30,7 @@ It generates website files locally and can optionally launch a local server for 
     server: flags.boolean({ char: 's', description: 'start a local http server and open a browser for pre-viewing generated website' }),
     port: flags.integer({ char: 'p', default: 8002, description: 'port number of the local http server for preview' }),
 
-    parallelism: flags.integer({ char: 'l', default: 2, description: 'approximately how many AWS API calls are allowed at the same time' }),
+    parallelism: flags.integer({ char: 'l', default: 2, description: 'approximately how many AWS API calls are allowed at the same time, use negative values if no parallelism is desired and backoff delay is needed' }),
     quiet: flags.boolean({ char: 'q', description: 'no console output' }),
     debug: flags.boolean({ char: 'd', description: 'output debug messages' }),
   };
@@ -61,8 +61,10 @@ It generates website files locally and can optionally launch a local server for 
     }
 
     do {
-      const context = new Context(options);
-      context.debug('Options: ', options);
+      const reconstructedcommandLine = OclifUtils.reconstructCommandLine(this, options);
+      const context = new Context(options, reconstructedcommandLine);
+      context.debug('Command line: ', reconstructedcommandLine);
+      // context.debug('Options: ', options);
 
       try {
         await this.doRun(context);
@@ -75,11 +77,11 @@ It generates website files locally and can optionally launch a local server for 
           break;
         } else if (error.code === 'TooManyRequestsException') {
           const previousParallelism = options.flags.parallelism;
-          options.flags.parallelism = Math.floor(previousParallelism / 2);
-          if (options.flags.parallelism >= 1) {
+          options.flags.parallelism = previousParallelism - 1;
+          if (options.flags.parallelism >= -3) {
             context.info(`AWS is not able to handle too many requests at the same time. Restarting with parallelism changing from ${previousParallelism} to ${options.flags.parallelism} ...`);
             context.info('(Parallelism can be specified by -l / --parallelism option)');
-            await PromiseUtils.delayedResolve(3000);
+            await PromiseUtils.delayedResolve(5000);
           } else {
             context.info('AWS is not able to handle too many requests at the same time. Please try later.');
             context.info(`  ${error}`);
@@ -89,7 +91,7 @@ It generates website files locally and can optionally launch a local server for 
           throw error;
         }
       }
-    } while (options.flags.parallelism >= 1);
+    } while (options.flags.parallelism >= -3);
   }
 
   protected async doRun(context: Context) {

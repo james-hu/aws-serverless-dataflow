@@ -38,7 +38,7 @@ export class Context {
   public awsOptions: Pick<ServiceConfigurationOptions, 'region'> = {};
   public cliUx = cli;
 
-  constructor(public options: typeof AwsServerlessDataflow.Options,
+  constructor(public options: typeof AwsServerlessDataflow.Options, public reconstructedcommandLine: string,
   ) {
     this.awsOptions.region = options.flags.region;
   }

@@ -93,7 +93,7 @@ export class Surveyor {
         const resourceDetails = { ...resource, integrations: new Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>() };
         if (resource.resourceMethods) {
           for (const httpMethod of Object.keys(resource.resourceMethods)) {
-            const integration = await apig.getIntegration({ restApiId, resourceId: resource.id!, httpMethod }).promise();
+            const integration = await PromiseUtils.delayedResolve(200 + (200 * Math.abs(parallelism)), apig.getIntegration({ restApiId, resourceId: resource.id!, httpMethod }).promise());
             const lambdaFunctionArn = this.retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(integration.uri);
             const integrationDetails = { ...integration, lambdaFunctionArn };
             if (lambdaFunctionArn) {
