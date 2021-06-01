@@ -61,7 +61,13 @@ export class Generator {
 
     const srcSrcDir = path.resolve(__dirname);
     const srcSiteDir = path.join(srcSrcDir, '..', 'site');
-    const srcVisNetworkJsFile = path.join(srcSrcDir, '..', 'node_modules', 'vis-network', 'standalone', 'umd', 'vis-network.min.js');
+
+    let srcVisNetworkDir = path.join(srcSrcDir, '..', 'node_modules', 'vis-network');
+    if (!fs.existsSync(srcVisNetworkDir)) {
+      srcVisNetworkDir = path.join(srcSrcDir, '..', '..', 'vis-network');
+    }
+    const srcVisNetworkJsFile = path.join(srcVisNetworkDir, 'standalone', 'umd', 'vis-network.min.js');
+
     const destJsDir = path.join(destDir, 'js');
     const destVisNetworkJsFile = path.join(destJsDir, 'vis-network.min.js');
 
