@@ -131,4 +131,4 @@ EXAMPLES
 ## For developers
 
 * Run for test: `./bin/run ...`
-* Release: `npm version patch -m "..."; npm publish`
+* Release: `npm version patch -m "..." && npm publish`
