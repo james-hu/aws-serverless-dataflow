@@ -78,13 +78,13 @@ export class Generator {
     await fs.emptyDir(destDir);
 
     await Promise.all([
-      fs.copy(srcSiteDir, destDir),
+      fs.copy(srcSiteDir, destDir, { preserveTimestamps: true }),
       fs.writeFile(path.join(destDir, 'base.js'), `var reconstructedCommandLine = '${jsStringEscape(this.context.reconstructedcommandLine)}'`),
       fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify([...nodes.values()], null, 2)),
       fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], null, 2)),
       fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], null, 2)),
     ]);
-    await fs.copy(srcVisNetworkJsFile, destVisNetworkJsFile);
+    await fs.copy(srcVisNetworkJsFile, destVisNetworkJsFile, { preserveTimestamps: true });
 
     this.context.cliUx.action.stop();
   }
