@@ -13,11 +13,18 @@ This is a command line tool for visualising the connections among AWS serverless
 Typical usage:
 
 ```sh-session
-$ npx aws-serverless-dataflow -r ap-southeast-2 -s
-(1/4) Surveying API Gateway and SQS... done
-(2/4) Surveying SNS... done
-(3/4) Surveying Lambda... done
-(4/4) Surveying S3... done
+$ npx aws-serverless-dataflow -r ap-southeast-2 -i '*boi*' -i '*datahub*' -x '*jameshu*' -c -s
+Surveyed 11/42 domains in API Gateway
+Surveyed 72/224 queues in SQS
+Surveyed 48/209 topics in SNS
+Surveyed 65/250 subscriptions in SNS
+Surveyed 100/1115 stacks in CloudFormation
+Surveyed 120 APIs in API Gateway
+(1/2) Surveying API Gateway, SQS, SNS and CloudFormation... done
+Surveyed 85/410 buckets in S3
+Surveyed 120/464 functions in Lambda
+(2/2) Surveying S3 and Lambda... done
+Finished survey in 72.672 seconds
 Generating static website content in 'dataflow'... done
 Local server started. Ctrl-C to stop. Access URL: http://localhost:8002/
 ```
@@ -32,12 +39,12 @@ Command line option `-r ap-southeast-2` specifies AWS region,
 `-s` tells the command line to start up a local http server and then open the browser pointing to that local server for viewing generated content.
 
 If you don't want to include all the resources,
-you can use `--include` and `--exclude` options to specify which to include and which to exclude.
+you can use `--include`/`-i` and `--exclude`/`-x` options to specify which to include and which to exclude.
 Both of them can have multiple appearances.
 A resource would be included if any of the `--include` wild card patterns matches and none of the `--include` wild card patterns matches.
 
 It may take a while for this tool to survey all relevant resources in your AWS account.
-To make it faster, you can try to increase parallelism by changing `--parallelism`/`-l` option which by default is 8.
+To make it faster, you can try to increase parallelism by changing `--parallelism`/`-l` option which by default is 4.
 If you see `TooManyRequestsException: Rate exceeded` error, you can try decreasing it.
 
 `-c` or `--cloud-formation` would enable clustering resouces by CloudFormation stacks.
