@@ -91,10 +91,8 @@ OPTIONS
                                  and ARN of Lambda functions/SNS topics/SQS
                                  queues that should be includeed
 
-  -l, --parallelism=parallelism  [default: 2] approximately how many AWS API
-                                 calls are allowed at the same time, use
-                                 negative values if no parallelism is desired
-                                 and backoff delay is needed
+  -l, --parallelism=parallelism  [default: 4] approximately how many AWS API
+                                 calls are allowed at the same time
 
   -p, --port=port                [default: 8002] port number of the local http
                                  server for preview
