@@ -8,8 +8,9 @@
   },
   "bugs": "https://github.com/james-hu/aws-serverless-dataflow/issues",
   "dependencies": {
-    "@handy-common-utils/aws-utils": "^1.0.3",
+    "@handy-common-utils/aws-utils": "^1.0.5",
     "@handy-common-utils/oclif-utils": "^1.0.3",
+    "@handy-common-utils/promise-utils": "^1.1.1",
     "@oclif/command": "^1.8.0",
     "@oclif/config": "^1.17.0",
     "@oclif/plugin-help": "^3.2.0",
@@ -26,7 +27,7 @@
     "vis-network": "^8.5.2"
   },
   "devDependencies": {
-    "@handy-common-utils/dev-dependencies": "^1.0.11",
+    "@handy-common-utils/dev-dependencies": "^1.0.14",
     "@oclif/dev-cli": "^1.22.2",
     "@oclif/test": "^1.2.7",
     "@types/aws-sdk": "^2.7.0",
