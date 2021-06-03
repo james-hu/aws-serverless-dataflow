@@ -30,7 +30,7 @@ It generates website files locally and can optionally launch a local server for 
     server: flags.boolean({ char: 's', description: 'start a local http server and open a browser for pre-viewing generated website' }),
     port: flags.integer({ char: 'p', default: 8002, description: 'port number of the local http server for preview' }),
 
-    parallelism: flags.integer({ char: 'l', default: 2, description: 'approximately how many AWS API calls are allowed at the same time, use negative values if no parallelism is desired and backoff delay is needed' }),
+    parallelism: flags.integer({ char: 'l', default: 5, description: 'approximately how many AWS API calls are allowed at the same time' }),
     quiet: flags.boolean({ char: 'q', description: 'no console output' }),
     debug: flags.boolean({ char: 'd', description: 'output debug messages' }),
   };
@@ -71,7 +71,7 @@ It generates website files locally and can optionally launch a local server for 
         break;
       } catch (error) {
         context.debug(error);
-        if (error.code === 'ExpiredToken') {
+        if (typeof error?.code === 'string' && error.code.startsWith('ExpiredToken')) {
           context.info('Did you forget to log into AWS? Please log into your AWS account and try again.');
           context.info(`  ${error}`);
           break;

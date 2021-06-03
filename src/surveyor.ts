@@ -3,7 +3,7 @@
 /* eslint-disable no-await-in-loop */
 import moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
-import { AwsUtils } from '@handy-common-utils/aws-utils';
+import { AwsUtils, withRetry } from '@handy-common-utils/aws-utils';
 import { PromiseUtils } from '@handy-common-utils/promise-utils';
 import { Context } from './context';
 import buildIncludeExcludeMatcher from './matcher';
@@ -18,33 +18,23 @@ export class Surveyor {
   async survey() {
     const startTime = moment();
     const shouldSurveyCloudFormation = this.context.options.flags['cloud-formation'];
-    const phases = shouldSurveyCloudFormation ? 5 : 4;
     const cfSurvey = shouldSurveyCloudFormation ? this.surveyCloudFormation() : Promise.resolve();
 
-    this.context.cliUx.action.start(`(1/${phases}) Surveying API Gateway and SQS`, undefined, { stdout: true });
+    this.context.cliUx.action.start(`(1/2) Surveying API Gateway, SQS${shouldSurveyCloudFormation ? ', SNS and CloudFormation' : ' and SNS'}`, undefined, { stdout: true });
     await Promise.all([
+      cfSurvey,
       this.surveyApiGateway(),
-      this.surveySQS(),
+      this.surveySQS().then(() => this.surveySNS()),
     ]);
     this.context.cliUx.action.stop();
 
-    this.context.cliUx.action.start(`(2/${phases}) Surveying SNS`, undefined, { stdout: true });
-    await this.surveySNS();
+    this.context.cliUx.action.start('(2/2) Surveying S3 and Lambda', undefined, { stdout: true });
+    await Promise.all([
+      this.surveyLambda(),
+      this.surveyS3(),
+    ]);
     this.context.cliUx.action.stop();
 
-    this.context.cliUx.action.start(`(3/${phases}) Surveying Lambda`, undefined, { stdout: true });
-    await this.surveyLambda();
-    this.context.cliUx.action.stop();
-
-    this.context.cliUx.action.start(`(4/${phases}) Surveying S3`, undefined, { stdout: true });
-    await this.surveyS3();
-    this.context.cliUx.action.stop();
-
-    if (shouldSurveyCloudFormation) {
-      this.context.cliUx.action.start(`(5/${phases}) Waiting for CloudFormation survey to finish`, undefined, { stdout: true });
-      await cfSurvey;
-      this.context.cliUx.action.stop();
-    }
     const duration = moment.duration(moment().diff(startTime));
     this.context.info(`Finished survey in ${duration.as('second')} seconds`);
   }
@@ -56,13 +46,13 @@ export class Surveyor {
 
     // Domain Names
     const domainNameObjects = await AwsUtils.repeatFetchingItemsByPosition(
-      pagingParam => apig.getDomainNames({ limit: 100, ...pagingParam }).promise(),
+      pagingParam => withRetry(() => apig.getDomainNames({ limit: 100, ...pagingParam }).promise()),
     );
     await PromiseUtils.inParallel(parallelism, domainNameObjects, async domainNameObj => {
       const domainName = domainNameObj.domainName!;
       if (this.shouldInclude(domainName)) {
         const mappings = await AwsUtils.repeatFetchingItemsByPosition(
-          pagingParam => apig.getBasePathMappings({ domainName, limit: 500, ...pagingParam }).promise(),
+          pagingParam => withRetry(() => apig.getBasePathMappings({ domainName, limit: 500, ...pagingParam }).promise()),
         );
         inventory.apigDomainNamesByName.set(domainName, {
           ...domainNameObj,
@@ -78,13 +68,13 @@ export class Surveyor {
 
     // REST APIs
     const restApis = await AwsUtils.repeatFetchingItemsByPosition(
-      pagingParam => apig.getRestApis({ limit: 100, ...pagingParam }).promise(),
+      pagingParam => withRetry(() => apig.getRestApis({ limit: 100, ...pagingParam }).promise()),
     );
     await PromiseUtils.inParallel(parallelism, restApis, async restApi => {
       const restApiId = restApi.id!;
 
       const resources = await AwsUtils.repeatFetchingItemsByPosition(
-        pagingParam => apig.getResources({ ...pagingParam, restApiId }).promise(),
+        pagingParam => withRetry(() => apig.getResources({ ...pagingParam, restApiId }).promise()),
       );
       const lambdaFunctionArns = new Set<string>(); // at resource level
       const detailedResources = new Array<APIGateway.Resource & {
@@ -94,7 +84,7 @@ export class Surveyor {
         const resourceDetails = { ...resource, integrations: new Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>() };
         if (resource.resourceMethods) {
           for (const httpMethod of Object.keys(resource.resourceMethods)) {
-            const integration = await PromiseUtils.delayedResolve(200 + (200 * Math.abs(parallelism)), apig.getIntegration({ restApiId, resourceId: resource.id!, httpMethod }).promise());
+            const integration = await withRetry(() => apig.getIntegration({ restApiId, resourceId: resource.id!, httpMethod }).promise());
             const lambdaFunctionArn = this.retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(integration.uri);
             const integrationDetails = { ...integration, lambdaFunctionArn };
             if (lambdaFunctionArn) {
@@ -124,10 +114,10 @@ export class Surveyor {
     const sqs = new SQS(this.context.awsOptions);
 
     const queueUrls = await AwsUtils.repeatFetchingItemsByNextToken<string>('QueueUrls',
-      pagingParam => sqs.listQueues({ ...pagingParam }).promise(),
+      pagingParam => withRetry(() => sqs.listQueues({ ...pagingParam }).promise()),
     );
     await PromiseUtils.inParallel(parallelism, queueUrls, async queueUrl => {
-      const queueAttributes = (await sqs.getQueueAttributes({ QueueUrl: queueUrl, AttributeNames: ['All'] }).promise()).Attributes!;
+      const queueAttributes = (await withRetry(() => sqs.getQueueAttributes({ QueueUrl: queueUrl, AttributeNames: ['All'] }).promise())).Attributes!;
       queueAttributes.QueueUrl = queueUrl;    // add this for convenience
       const queueDetails = { ...queueAttributes, subscriptions: [] } as any;
       const queueArn = queueAttributes.QueueArn;
@@ -146,11 +136,11 @@ export class Surveyor {
 
     // topics
     const topics = await AwsUtils.repeatFetchingItemsByNextToken<SNS.Topic>('Topics',
-      pagingParam => sns.listTopics({ ...pagingParam }).promise(),
+      pagingParam => withRetry(() => sns.listTopics({ ...pagingParam }).promise()),
     );
     const topicArns = topics.map(topic => topic.TopicArn!);
     await PromiseUtils.inParallel(parallelism, topicArns, async topicArn => {
-      const topicAttributes = (await sns.getTopicAttributes({ TopicArn: topicArn }).promise()).Attributes!;
+      const topicAttributes = (await withRetry(() => sns.getTopicAttributes({ TopicArn: topicArn }).promise())).Attributes!;
       const topicDetails = { ...topicAttributes, subscriptions: [] } as any;
       if (this.shouldInclude(topicArn)) {
         inventory.snsTopicsByArn.set(topicArn, topicDetails);
@@ -160,13 +150,13 @@ export class Surveyor {
 
     // subscriptions
     const subscriptions = await AwsUtils.repeatFetchingItemsByNextToken<SNS.Subscription>('Subscriptions',
-      pagingParam => sns.listSubscriptions({ ...pagingParam }).promise(),
+      pagingParam => withRetry(() => sns.listSubscriptions({ ...pagingParam }).promise()),
     );
     await PromiseUtils.inParallel(parallelism, subscriptions, async subscription => {
       const subscriptionArn = subscription.SubscriptionArn!;
       if (this.shouldInclude(subscription.TopicArn)) {
         try {
-          const subscriptionAttributes = (await sns.getSubscriptionAttributes({ SubscriptionArn: subscriptionArn }).promise()).Attributes!;
+          const subscriptionAttributes = (await withRetry(() => sns.getSubscriptionAttributes({ SubscriptionArn: subscriptionArn }).promise())).Attributes!;
           const subscriptionDetails = { ...subscriptionAttributes, ...subscription as Required<typeof subscription> };
           inventory.snsSubscriptionsByArn.set(subscriptionArn, subscriptionDetails);
           inventory.snsTopicsByArn.get(subscription.TopicArn!)?.subscriptions.push(subscriptionDetails);
@@ -187,12 +177,12 @@ export class Surveyor {
     const inventory = this.context.inventory;
     const s3 = new S3(this.context.awsOptions);
 
-    const buckets = (await s3.listBuckets().promise()).Buckets ?? [];
+    const buckets = (await withRetry(() => s3.listBuckets().promise())).Buckets ?? [];
     await PromiseUtils.inParallel(parallelism, buckets, async bucket => {
       if (this.shouldInclude(bucket.Name)) {
         const bucketName = bucket.Name!;
         const bucketArn = `arn::s3:::${bucketName}`;  // this is not the real ARN but should work for our purpose
-        const notificationConfiguration = await s3.getBucketNotificationConfiguration({ Bucket: bucketName }).promise();
+        const notificationConfiguration = await withRetry(() => s3.getBucketNotificationConfiguration({ Bucket: bucketName }).promise());
         const notifyLambdaFunctionArns = new Set((notificationConfiguration.LambdaFunctionConfigurations ?? []).map(c => c.LambdaFunctionArn).filter(arn => inventory.lambdaFunctionsByArn.has(arn)));
         const notifySqsQueueArns = new Set((notificationConfiguration.QueueConfigurations ?? []).map(c => c.QueueArn).filter(arn => inventory.sqsQueuesByArn.has(arn)));
         const notifySnsTopicArns = new Set((notificationConfiguration.TopicConfigurations ?? []).map(c => c.TopicArn).filter(arn => inventory.snsTopicsByArn.has(arn)));
@@ -210,18 +200,17 @@ export class Surveyor {
   }
 
   async surveyLambda() {
-    const parallelism = 1 + Math.floor(Math.sqrt(Math.sqrt(this.context.options.flags.parallelism)) / 1.4);
-    // console.log(`surveyLambda() parallelism: ${parallelism}`);
+    const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const lambda = new Lambda(this.context.awsOptions);
     const functionConfigurations = await AwsUtils.repeatFetchingItemsByMarker<Lambda.FunctionConfiguration>('Functions',
-      pagingParam => lambda.listFunctions({ ...pagingParam }).promise(),
+      pagingParam => withRetry(() => lambda.listFunctions({ ...pagingParam }).promise()),
     );
     await PromiseUtils.inParallel(parallelism, functionConfigurations, async functionConfiguration => {
       const functionArn = functionConfiguration.FunctionArn!;
       if (this.shouldInclude(functionArn)) {
         const eventSourceMappings = await AwsUtils.repeatFetchingItemsByMarker<Lambda.EventSourceMappingConfiguration>('EventSourceMappings',
-          pagingParam => lambda.listEventSourceMappings({ ...pagingParam, FunctionName: functionArn }).promise(),
+          pagingParam => withRetry(() => lambda.listEventSourceMappings({ ...pagingParam, FunctionName: functionArn }).promise()),
         );
         const detailedEventSourceMappings = eventSourceMappings.map(mapping => {
           let snsTopic;
@@ -255,9 +244,9 @@ export class Surveyor {
 
   async surveyCloudFormation() {
     const inventory = this.context.inventory;
-    const cf = new CloudFormation({ ...this.context.awsOptions, maxRetries: 6, retryDelayOptions: { base: 600 } });
+    const cf = new CloudFormation({ ...this.context.awsOptions, maxRetries: 7, retryDelayOptions: { customBackoff: (i => [300, 600, 1000, 2000, 3000, 5000, 8000, -1][i]) } });
     const stacks = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackSummary>('StackSummaries',
-      pagingParam => cf.listStacks({ ...pagingParam }).promise(),
+      pagingParam => withRetry(() => cf.listStacks({ ...pagingParam }).promise(), [8000, 15000, 20000], [429, 400]),
     );
     for (let i = 0; i < stacks.length; i++) {
       const stack = stacks[i];
@@ -265,7 +254,7 @@ export class Surveyor {
         let resources = new Array<CloudFormation.StackResourceSummary>();
         try {
           resources = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackResourceSummary>('StackResourceSummaries',
-            pagingParam => cf.listStackResources({ ...pagingParam, StackName: stack.StackId! }).promise(),
+            pagingParam => withRetry(() => cf.listStackResources({ ...pagingParam, StackName: stack.StackId! }).promise(), [8000, 15000, 20000], [429, 400]),
           );
         } catch (error) {
           if (error.statusCode === 400) {
