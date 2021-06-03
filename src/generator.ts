@@ -1,3 +1,6 @@
+/* eslint-disable unicorn/no-null */
+/* eslint-disable unicorn/prefer-node-protocol */
+/* eslint-disable unicorn/import-style */
 /* eslint-disable complexity */
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -59,6 +62,7 @@ export class Generator {
     const destDir = this.context.options.args.path;
     this.context.cliUx.action.start(`Generating static website content in '${destDir}'`, undefined, { stdout: true });
 
+    // eslint-disable-next-line unicorn/prefer-module
     const srcSrcDir = path.resolve(__dirname);
     const srcSiteDir = path.join(srcSrcDir, '..', 'site');
 
@@ -80,9 +84,9 @@ export class Generator {
     await Promise.all([
       fs.copy(srcSiteDir, destDir, { preserveTimestamps: true }),
       fs.writeFile(path.join(destDir, 'base.js'), `var reconstructedCommandLine = '${jsStringEscape(this.context.reconstructedcommandLine)}'`),
-      fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify([...nodes.values()], null, 2)),
-      fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], null, 2)),
-      fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], null, 2)),
+      fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify([...nodes.values()], undefined, 2)),
+      fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], undefined, 2)),
+      fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], undefined, 2)),
     ]);
     await fs.copy(srcVisNetworkJsFile, destVisNetworkJsFile, { preserveTimestamps: true });
 
@@ -174,7 +178,7 @@ export class Generator {
       const stackIdArn = stack.StackId!;
       const stackArn = AwsUtils.parseArn(stackIdArn);
       for (const resource of stack.resources) {
-        let arn: string|null|undefined = null;
+        let arn: string|null|undefined;
         switch (resource.ResourceType) {
           case 'AWS::Lambda::Function':
             arn = `arn:${stackArn?.partition}:lambda:${stackArn?.region}:${stackArn?.accountId}:function:${resource.PhysicalResourceId}`;

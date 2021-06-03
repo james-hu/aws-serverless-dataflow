@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-null */
 /* eslint-disable max-depth */
 /* eslint-disable no-await-in-loop */
 import moment from 'moment';
@@ -111,7 +112,7 @@ export class Surveyor {
   }
 
   retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(uri?: string): string | null {
-    if (!uri || !uri.match(/\/functions\/arn:.*:lambda:/) || !uri.endsWith('/invocations')) {
+    if (!uri || !/\/functions\/arn:.*:lambda:/.test(uri) || !uri.endsWith('/invocations')) {
       return null;
     }
     return uri.replace(/.*\/functions\/arn:/, 'arn:').replace(/\/invocations$/, '');

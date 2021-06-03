@@ -25,8 +25,8 @@ describe('Surveyor', () => {
     const surveyor = new Surveyor({
       options: {
         flags: {
-          include: null,
-          exclude: null,
+          include: undefined,
+          exclude: undefined,
         },
       },
     } as any);

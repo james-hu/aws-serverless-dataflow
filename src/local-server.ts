@@ -8,6 +8,7 @@ export class LocalServer {
   constructor(private context: Context) {
     const port = this.context.options.flags.port;
     this.url = `http://localhost:${port}/`;
+    // eslint-disable-next-line unicorn/prefer-module
     const rserver = require('really-simple-http-server');
     this.server = rserver({
       path: context.options.args.path,
