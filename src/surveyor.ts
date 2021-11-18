@@ -1,4 +1,4 @@
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { AwsUtils, withRetry } from '@handy-common-utils/aws-utils';
 import { PromiseUtils } from '@handy-common-utils/promise-utils';
@@ -13,7 +13,7 @@ export class Surveyor {
   }
 
   async survey() {
-    const startTime = moment();
+    const startTime = DateTime.now();
     const shouldSurveyCloudFormation = this.context.options.flags['cloud-formation'];
     const cfSurvey = shouldSurveyCloudFormation ? this.surveyCloudFormation() : Promise.resolve();
 
@@ -32,8 +32,8 @@ export class Surveyor {
     ]);
     this.context.cliUx.action.stop();
 
-    const duration = moment.duration(moment().diff(startTime));
-    this.context.info(`Finished survey in ${duration.as('second')} seconds`);
+    const duration = startTime.diffNow().negate();
+    this.context.info(`Finished survey in ${duration.as('seconds')} seconds`);
   }
 
   async surveyApiGateway() {
