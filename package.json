@@ -4,7 +4,7 @@
   "version": "1.2.1",
   "author": "James Hu",
   "bin": {
-    "aws-serverless-dataflow": "./bin/run"
+    "aws-serverless-dataflow": "./bin/aws-serverless-dataflow.js"
   },
   "bugs": "https://github.com/james-hu/aws-serverless-dataflow/issues",
   "dependencies": {
@@ -21,6 +21,7 @@
     "js-string-escape": "^1.0.1",
     "luxon": "^2.1.1",
     "matcher": "^3.0.0",
+    "ncp": "^2.0.0",
     "open": "^7.2.1",
     "really-simple-http-server": "^1.2.0",
     "tslib": "^1.13.0",
@@ -34,7 +35,9 @@
     "@types/js-string-escape": "^1.0.0",
     "@types/luxon": "^2.0.7",
     "@types/matcher": "^2.0.0",
-    "browserify": "^17.0.0"
+    "@types/ncp": "^2.0.5",
+    "browserify": "^17.0.0",
+    "pkg": "^5.4.1"
   },
   "engines": {
     "node": ">=8.0.0"
@@ -63,6 +66,21 @@
   ],
   "license": "Apache-2.0",
   "main": "lib/index.js",
+  "pkg": {
+    "scripts": [
+      "lib/**/*.js",
+      "bin/aws-serverless-dataflow"
+    ],
+    "assets": [
+      "site/**/*",
+      "site/js/*"
+    ],
+    "outputPath": "pkg",
+    "targets": [
+      "node16-macos-x64",
+      "node16-win-x64"
+    ]
+  },
   "oclif": {
     "bin": "aws-serverless-dataflow",
     "plugins": [
@@ -79,6 +97,7 @@
     "pretest": "eslint . --ext .ts",
     "test": "nyc mocha",
     "prepare": "shx rm -rf dist lib && tsc && browserify lib/browser-utils.js -o site/js/browser-utils.js",
+    "pkg": "npm run prepare && pkg .",
     "preversion": "./bin/run --update-readme.md && git add README.md"
   },
   "types": "lib/index.d.ts"

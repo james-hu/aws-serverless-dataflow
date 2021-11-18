@@ -1,9 +1,11 @@
 /* eslint-disable unicorn/prefer-node-protocol */
 /* eslint-disable unicorn/import-style */
 /* eslint-disable complexity */
+import { promisify } from 'util';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import jsStringEscape from 'js-string-escape';
+import ncp from 'ncp';
 import { AwsUtils } from '@handy-common-utils/aws-utils';
 import { Context } from './context';
 
@@ -53,6 +55,14 @@ enum Group {
   DynamoDbTable = 'DynamoDbTable',
 }
 
+const ncpPromise = promisify(ncp);
+function fsCopy(src: string, dest: string): Promise<void> {
+  if (!(process as any)?.pkg?.entrypoint) {
+    return fs.copy(src, dest, { preserveTimestamps: true });
+  }
+  return ncpPromise(src, dest);
+}
+
 export class Generator {
   constructor(protected context: Context) {}
 
@@ -80,7 +90,7 @@ export class Generator {
     await fs.emptyDir(destDir);
 
     await Promise.all([
-      fs.copy(srcSiteDir, destDir, { preserveTimestamps: true }),
+      fsCopy(srcSiteDir, destDir),
       fs.writeFile(path.join(destDir, 'base.js'), `
         var reconstructedCommandLine = '${jsStringEscape(this.context.reconstructedcommandLine)}';
         var generatedTimestamp = '${new Date().toISOString()}';
@@ -89,7 +99,7 @@ export class Generator {
       fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], undefined, 2)),
       fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], undefined, 2)),
     ]);
-    await fs.copy(srcVisNetworkJsFile, destVisNetworkJsFile, { preserveTimestamps: true });
+    await fsCopy(srcVisNetworkJsFile, destVisNetworkJsFile);
 
     this.context.cliUx.action.stop();
   }
@@ -363,3 +373,4 @@ export class Generator {
     return edges;
   }
 }
+
