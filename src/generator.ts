@@ -81,7 +81,10 @@ export class Generator {
 
     await Promise.all([
       fs.copy(srcSiteDir, destDir, { preserveTimestamps: true }),
-      fs.writeFile(path.join(destDir, 'base.js'), `var reconstructedCommandLine = '${jsStringEscape(this.context.reconstructedcommandLine)}'`),
+      fs.writeFile(path.join(destDir, 'base.js'), `
+        var reconstructedCommandLine = '${jsStringEscape(this.context.reconstructedcommandLine)}';
+        var generatedTimestamp = '${new Date().toISOString()}';
+      `),
       fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify([...nodes.values()], undefined, 2)),
       fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], undefined, 2)),
       fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], undefined, 2)),
