@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import { Command, flags } from '@oclif/command';
 import { Context } from './context';
 import { Generator } from './generator';
@@ -69,7 +68,7 @@ It generates website files locally and can optionally launch a local server for 
       try {
         await this.doRun(context);
         break;
-      } catch (error) {
+      } catch (error: any) {
         context.debug(error);
         if (typeof error?.code === 'string' && error.code.startsWith('ExpiredToken')) {
           context.info('Did you forget to log into AWS? Please log into your AWS account and try again.');

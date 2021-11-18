@@ -70,14 +70,12 @@ export class Context {
 
   info(message?: any, ...optionalParams: any[]): void {
     if (this.options.flags.quiet !== true) {
-      // eslint-disable-next-line no-console
       console.log(message, ...optionalParams);
     }
   }
 
   debug(message?: any, ...optionalParams: any[]): void {
     if (this.options.flags.debug === true) {
-      // eslint-disable-next-line no-console
       console.log(message, ...optionalParams);
     }
   }

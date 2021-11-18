@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/no-null */
 /* eslint-disable unicorn/prefer-node-protocol */
 /* eslint-disable unicorn/import-style */
 /* eslint-disable complexity */
@@ -55,7 +54,6 @@ enum Group {
 }
 
 export class Generator {
-  // eslint-disable-next-line no-useless-constructor
   constructor(protected context: Context) {}
 
   async generate() {

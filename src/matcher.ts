@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/no-null */
 import * as  matcher from 'matcher';
 
 function buildIncludeExcludeMatcher(includePatterns?: string[], excludePatterns?: string[]) {

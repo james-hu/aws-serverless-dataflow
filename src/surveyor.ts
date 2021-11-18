@@ -1,6 +1,3 @@
-/* eslint-disable unicorn/no-null */
-/* eslint-disable max-depth */
-/* eslint-disable no-await-in-loop */
 import moment from 'moment';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { AwsUtils, withRetry } from '@handy-common-utils/aws-utils';
@@ -160,7 +157,7 @@ export class Surveyor {
           const subscriptionDetails = { ...subscriptionAttributes, ...subscription as Required<typeof subscription> };
           inventory.snsSubscriptionsByArn.set(subscriptionArn, subscriptionDetails);
           inventory.snsTopicsByArn.get(subscription.TopicArn!)?.subscriptions.push(subscriptionDetails);
-        } catch (error) {
+        } catch (error: any) {
           if (error.statusCode === 404 || error.statusCode === 400) {
             this.context.debug(`Ignore zombie or pending subscription: ${subscriptionArn}`);
           } else {
@@ -256,7 +253,7 @@ export class Surveyor {
           resources = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackResourceSummary>('StackResourceSummaries',
             pagingParam => withRetry(() => cf.listStackResources({ ...pagingParam, StackName: stack.StackId! }).promise(), [8000, 15000, 20000], [429, 400]),
           );
-        } catch (error) {
+        } catch (error: any) {
           if (error.statusCode === 400) {
             const msg = `Ignore resources of CloudFormation stack (${i}/${stacks.length}) ${stack.StackId}: ${error}`;
             if (error.retryable) {
