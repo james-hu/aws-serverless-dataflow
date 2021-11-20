@@ -52,7 +52,16 @@ It is useful when you would like to have a high level view.
 
 ## Quick start
 
-You can have it installed globally like this:
+### Option 1: download precompiled binaries 
+
+Precompiled binaries can be downloaded from the [release page on GitHub](https://github.com/james-hu/aws-serverless-dataflow/releases).
+
+You just need to download the version matching your OS (Windows, MacOS, or Linux) and then run it from a terminal/command window.
+
+### Option 2: install as NPM package
+
+If [Node.js](https://nodejs.org/) has already been installed in the computer,
+you can have aws-serverless-dataflow installed globally like this:
 
 ```sh-session
 $ npm install -g aws-serverless-dataflow
@@ -66,6 +75,8 @@ Or, you can just invoke the latest version with `npx`:
 $ npx aws-serverless-dataflow ...
 ...
 ```
+
+### --help
 
 By passing `-h` or `--help` to the command line, you can see all supported arguments and options.
 
