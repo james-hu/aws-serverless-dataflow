@@ -72,8 +72,7 @@
       "bin/aws-serverless-dataflow"
     ],
     "assets": [
-      "site/**/*",
-      "site/js/*"
+      "site/**/*"
     ],
     "outputPath": "pkg",
     "targets": [
