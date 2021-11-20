@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+        cache: 'npm'
+        cache-dependency-path: |
+          package.json
+          package-lock.json
+    - run: npm ci
+    - run: npm test
+    - run: npm pkg
+    - name: Release
+    - uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          pkg/*
+
+
