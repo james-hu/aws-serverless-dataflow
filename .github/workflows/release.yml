@@ -21,7 +21,7 @@ jobs:
     - run: npm test
     - run: npm pkg
     - name: Release
-    - uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v1
       with:
         files: |
           pkg/*
