@@ -19,7 +19,7 @@ jobs:
           package-lock.json
     - run: npm ci
     - run: npm test
-    - run: npm pkg
+    - run: npm run pkg
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
