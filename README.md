@@ -10,7 +10,7 @@ Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow
 
 This is a command line tool for visualising the connections among AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) components. To run it, you need to log into your AWS account from command line first.
 
-Typical usage:
+Typical usage (you don't need Node.js environment and npx if you have downloaded [precompiled binaries for MacOS/Windows/Linux](https://github.com/james-hu/aws-serverless-dataflow/releases)):
 
 ```sh-session
 $ npx aws-serverless-dataflow -r ap-southeast-2 -i '*boi*' -i '*datahub*' -x '*jameshu*' -c -s
