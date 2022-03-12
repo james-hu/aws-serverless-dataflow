@@ -28,7 +28,7 @@
     "vis-network": "^8.5.2"
   },
   "devDependencies": {
-    "@handy-common-utils/dev-dependencies": "^1.0.32",
+    "@handy-common-utils/dev-dependencies": "^1.0.40",
     "@oclif/dev-cli": "^1.26.0",
     "@oclif/test": "^1.2.8",
     "@types/fs-extra": "^8.1.2",
