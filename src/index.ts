@@ -47,12 +47,12 @@ It generates website files locally and can optionally launch a local server for 
       -x '*lead-scor*' -x '*LeadCapture*' -c`,
   ];
 
-  protected async init() {
+  protected async init(): Promise<void> {
     OclifUtils.prependCliToExamples(this);
     return super.init();
   }
 
-  async run(argv?: string[]) {
+  async run(argv?: string[]): Promise<void> {
     const options = this.parse<CommandFlags<typeof AwsServerlessDataflow>, CommandArgs<typeof AwsServerlessDataflow>>(AwsServerlessDataflow, argv);
     if (options.flags['update-readme.md']) {
       OclifUtils.injectHelpTextIntoReadmeMd(this);
@@ -93,7 +93,7 @@ It generates website files locally and can optionally launch a local server for 
     } while (options.flags.parallelism >= -3);
   }
 
-  protected async doRun(context: Context) {
+  protected async doRun(context: Context): Promise<void> {
     const surveyor = new Surveyor(context);
     const generator = new Generator(context);
 

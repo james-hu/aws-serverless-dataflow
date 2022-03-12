@@ -68,12 +68,14 @@ export class Context {
     }>(),
   };
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   info(message?: any, ...optionalParams: any[]): void {
     if (this.options.flags.quiet !== true) {
       console.log(message, ...optionalParams);
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   debug(message?: any, ...optionalParams: any[]): void {
     if (this.options.flags.debug === true) {
       console.log(message, ...optionalParams);

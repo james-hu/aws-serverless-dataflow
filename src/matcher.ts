@@ -1,6 +1,6 @@
 import * as  matcher from 'matcher';
 
-function buildIncludeExcludeMatcher(includePatterns?: string[], excludePatterns?: string[]) {
+function buildIncludeExcludeMatcher(includePatterns?: string[], excludePatterns?: string[]): (text: string | null | undefined) => boolean {
   const matchPatterns = new Array<string[]>();
 
   const include = (includePatterns ?? []).filter(x => x != null && x.length > 0);

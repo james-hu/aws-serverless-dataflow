@@ -12,7 +12,7 @@ export class Surveyor {
     this.shouldInclude = buildIncludeExcludeMatcher(this.context.options.flags.include, this.context.options.flags.exclude);
   }
 
-  async survey() {
+  async survey(): Promise<void> {
     const startTime = DateTime.now();
     const shouldSurveyCloudFormation = this.context.options.flags['cloud-formation'];
     const cfSurvey = shouldSurveyCloudFormation ? this.surveyCloudFormation() : Promise.resolve();
@@ -36,7 +36,7 @@ export class Surveyor {
     this.context.info(`Finished survey in ${duration.as('seconds')} seconds`);
   }
 
-  async surveyApiGateway() {
+  async surveyApiGateway(): Promise<void> {
     const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const apig = new APIGateway(this.context.awsOptions);
@@ -105,7 +105,7 @@ export class Surveyor {
     return uri.replace(/.*\/functions\/arn:/, 'arn:').replace(/\/invocations$/, '');
   }
 
-  async surveySQS() {
+  async surveySQS(): Promise<void> {
     const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const sqs = new SQS(this.context.awsOptions);
@@ -126,7 +126,7 @@ export class Surveyor {
     this.context.info(`Surveyed ${inventory.sqsQueuesByArn.size}/${queueUrls.length} queues in SQS`);
   }
 
-  async surveySNS() {
+  async surveySNS(): Promise<void> {
     const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const sns = new SNS(this.context.awsOptions);
@@ -169,7 +169,7 @@ export class Surveyor {
     this.context.info(`Surveyed ${inventory.snsSubscriptionsByArn.size}/${subscriptions.length} subscriptions in SNS`);
   }
 
-  async surveyS3() {
+  async surveyS3(): Promise<void> {
     const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const s3 = new S3(this.context.awsOptions);
@@ -196,7 +196,7 @@ export class Surveyor {
     this.context.info(`Surveyed ${inventory.s3BucketsByArn.size}/${buckets.length} buckets in S3`);
   }
 
-  async surveyLambda() {
+  async surveyLambda(): Promise<void> {
     const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const lambda = new Lambda(this.context.awsOptions);
@@ -239,7 +239,7 @@ export class Surveyor {
     this.context.info(`Surveyed ${inventory.lambdaFunctionsByArn.size}/${functionConfigurations.length} functions in Lambda`);
   }
 
-  async surveyCloudFormation() {
+  async surveyCloudFormation(): Promise<void> {
     const inventory = this.context.inventory;
     const cf = new CloudFormation({ ...this.context.awsOptions, maxRetries: 7, retryDelayOptions: { customBackoff: (i => [300, 600, 1000, 2000, 3000, 5000, 8000, -1][i]) } });
     const stacks = await AwsUtils.repeatFetchingItemsByNextToken<CloudFormation.StackSummary>('StackSummaries',

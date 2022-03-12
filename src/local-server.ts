@@ -16,7 +16,7 @@ export class LocalServer {
     });
   }
 
-  start(doOpen = true) {
+  start(doOpen = true): void {
     this.server.start((err: any, _server: any) => {
       if (err) throw err;
       this.context.info(`Local server started. Ctrl-C to stop. Access URL: ${this.url}`);
@@ -26,11 +26,11 @@ export class LocalServer {
     });
   }
 
-  stop() {
+  stop(): void {
     this.server.stop();
   }
 
-  open() {
+  open(): ReturnType<typeof open> {
     return open(this.url, { wait: true });
   }
 }

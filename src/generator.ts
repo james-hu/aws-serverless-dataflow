@@ -66,7 +66,7 @@ function fsCopy(src: string, dest: string): Promise<void> {
 export class Generator {
   constructor(protected context: Context) {}
 
-  async generate() {
+  async generate(): Promise<void> {
     const destDir = this.context.options.args.path;
     this.context.cliUx.action.start(`Generating static website content in '${destDir}'`, undefined, { stdout: true });
 
