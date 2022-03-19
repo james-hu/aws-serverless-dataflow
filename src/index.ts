@@ -4,7 +4,7 @@ import { Generator } from './generator';
 import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
 import { PromiseUtils } from '@handy-common-utils/promise-utils';
-import { CommandArgs, CommandFlags, CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
+import { CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
 
 class AwsServerlessDataflow extends Command {
   static Options: CommandOptions<typeof AwsServerlessDataflow>;  // just to hold the type
@@ -52,8 +52,8 @@ It generates website files locally and can optionally launch a local server for 
     return super.init();
   }
 
-  async run(argv?: string[]): Promise<void> {
-    const options = this.parse<CommandFlags<typeof AwsServerlessDataflow>, CommandArgs<typeof AwsServerlessDataflow>>(AwsServerlessDataflow, argv);
+  async run(): Promise<void> {
+    const options = OclifUtils.parseCommandLine<typeof AwsServerlessDataflow>(this);
     if (options.flags['update-readme.md']) {
       OclifUtils.injectHelpTextIntoReadmeMd(this);
       return;
