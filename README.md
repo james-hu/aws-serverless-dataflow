@@ -85,61 +85,56 @@ By passing `-h` or `--help` to the command line, you can see all supported argum
 <!-- help start -->
 ```
 USAGE
-  $ aws-serverless-dataflow [PATH]
+  $ aws-serverless-dataflow  [PATH] [-v] [-h] [-r <value>] [-i
+    <value>] [-x <value>] [-c] [-s] [-p <value>] [-l <value>] [-q] [-d]
 
 ARGUMENTS
   PATH  [default: dataflow] path for putting generated website files
 
-OPTIONS
-  -c, --cloud-formation          survey CloudFormation stack information (this
-                                 takes more time)
-
-  -d, --debug                    output debug messages
-
-  -h, --help                     show CLI help
-
-  -i, --include=include          [default: *] wildcard patterns for domain names
-                                 and ARN of Lambda functions/SNS topics/SQS
-                                 queues that should be includeed
-
-  -l, --parallelism=parallelism  [default: 4] approximately how many AWS API
-                                 calls are allowed at the same time
-
-  -p, --port=port                [default: 8002] port number of the local http
-                                 server for preview
-
-  -q, --quiet                    no console output
-
-  -r, --region=region            AWS region (required if you don't have
-                                 AWS_REGION environment variable configured)
-
-  -s, --server                   start a local http server and open a browser
-                                 for pre-viewing generated website
-
-  -v, --version                  show CLI version
-
-  -x, --exclude=exclude          wildcard patterns for domain names and ARN of
-                                 Lambda functions/SNS topics/SQS queues that
-                                 should be excluded
+FLAGS
+  -c, --cloud-formation      survey CloudFormation stack information (this takes
+                             more time)
+  -d, --debug                output debug messages
+  -h, --help                 show CLI help
+  -i, --include=<value>      [default: *] wildcard patterns for domain names and
+                             ARN of Lambda functions/SNS topics/SQS queues that
+                             should be includeed
+  -l, --parallelism=<value>  [default: 4] approximately how many AWS API calls
+                             are allowed at the same time
+  -p, --port=<value>         [default: 8002] port number of the local http
+                             server for preview
+  -q, --quiet                no console output
+  -r, --region=<value>       AWS region (required if you don't have AWS_REGION
+                             environment variable configured)
+  -s, --server               start a local http server and open a browser for
+                             pre-viewing generated website
+  -v, --version              show CLI version
+  -x, --exclude=<value>      wildcard patterns for domain names and ARN of
+                             Lambda functions/SNS topics/SQS queues that should
+                             be excluded
 
 DESCRIPTION
-  This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, 
-  SQS, etc.) dataflow. It generates website files locally and can optionally 
+  Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow
+
+  This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS,
+  SQS, etc.) dataflow. It generates website files locally and can optionally
   launch a local server for you to preview.
 
-  Before running this tool, you need to log into your AWS account (through 
-  command line like aws, saml2aws, okta-aws, etc.) first. 
+  Before running this tool, you need to log into your AWS account (through
+  command line like aws, saml2aws, okta-aws, etc.) first.
 
-  This tool is free and open source: 
+  This tool is free and open source:
   https://github.com/james-hu/aws-serverless-dataflow
 
 EXAMPLES
-  aws-serverless-dataflow -r ap-southeast-2 -s
-  aws-serverless-dataflow -r ap-southeast-2 -s -i '*boi*' -i '*datahub*' \
-         -x '*jameshu*' -c
-  aws-serverless-dataflow -r ap-southeast-2 -s -i '*lr-*' \
-         -i '*lead*' -x '*slack*' -x '*lead-prioritization*' \
-         -x '*lead-scor*' -x '*LeadCapture*' -c
+  $ aws-serverless-dataflow -r ap-southeast-2 -s
+
+  $ aws-serverless-dataflow -r ap-southeast-2 -s -i '*boi*' -i '*datahub*' \
+        -x '*jameshu*' -c
+
+  $ aws-serverless-dataflow -r ap-southeast-2 -s -i '*lr-*' \
+        -i '*lead*' -x '*slack*' -x '*lead-prioritization*' \
+        -x '*lead-scor*' -x '*LeadCapture*' -c
 ```
 
 <!-- help end -->
