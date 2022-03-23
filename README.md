@@ -95,8 +95,8 @@ FLAGS
   -c, --cloud-formation      survey CloudFormation stack information (this takes
                              more time)
   -d, --debug                output debug messages
-  -h, --help                 show CLI help
-  -i, --include=<value>      [default: *] wildcard patterns for domain names and
+  -h, --help                 Show CLI help.
+  -i, --include=<value>...   [default: *] wildcard patterns for domain names and
                              ARN of Lambda functions/SNS topics/SQS queues that
                              should be includeed
   -l, --parallelism=<value>  [default: 4] approximately how many AWS API calls
@@ -108,8 +108,8 @@ FLAGS
                              environment variable configured)
   -s, --server               start a local http server and open a browser for
                              pre-viewing generated website
-  -v, --version              show CLI version
-  -x, --exclude=<value>      wildcard patterns for domain names and ARN of
+  -v, --version              Show CLI version.
+  -x, --exclude=<value>...   wildcard patterns for domain names and ARN of
                              Lambda functions/SNS topics/SQS queues that should
                              be excluded
 
