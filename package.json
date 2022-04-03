@@ -11,7 +11,7 @@
     "@handy-common-utils/aws-utils": "^1.0.6",
     "@handy-common-utils/oclif-utils": "^1.1.2",
     "@handy-common-utils/promise-utils": "^1.2.5",
-    "@oclif/core": "^1.6.1",
+    "@oclif/core": "^1.6.4",
     "@oclif/plugin-help": "^5.1.12",
     "@oclif/plugin-plugins": "^2.1.0",
     "@oclif/plugin-warn-if-update-available": "^2.0.4",
