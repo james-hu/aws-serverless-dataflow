@@ -1,6 +1,6 @@
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { ServiceConfigurationOptions } from 'aws-sdk/lib/service';
-import cli from 'cli-ux';
+import { CliUx } from '@oclif/core';
 import AwsServerlessDataflow = require('.');
 
 export type S3BucketDetails = S3.Bucket & {
@@ -36,7 +36,7 @@ type CloudFormationStackDetails = CloudFormation.StackSummary & {
 
 export class Context {
   public awsOptions: Pick<ServiceConfigurationOptions, 'region'> = {};
-  public cliUx = cli;
+  public cliUx = CliUx.ux;
 
   constructor(public options: typeof AwsServerlessDataflow.Options, public reconstructedcommandLine: string,
   ) {
