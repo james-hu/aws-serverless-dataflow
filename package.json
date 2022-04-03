@@ -16,7 +16,6 @@
     "@oclif/plugin-plugins": "^2.1.0",
     "@oclif/plugin-warn-if-update-available": "^2.0.4",
     "aws-sdk": "^2.1096.0",
-    "cli-ux": "^5.6.3",
     "fs-extra": "^9.0.1",
     "js-string-escape": "^1.0.1",
     "luxon": "^2.1.1",
@@ -25,7 +24,7 @@
     "open": "^7.2.1",
     "really-simple-http-server": "^1.2.0",
     "tslib": "^1.13.0",
-    "vis-network": "^8.5.2"
+    "vis-network": "^9.1.2"
   },
   "devDependencies": {
     "@handy-common-utils/dev-dependencies": "^1.1.1",
