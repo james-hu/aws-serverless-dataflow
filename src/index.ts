@@ -16,7 +16,11 @@ It generates website files locally and can optionally launch a local server for 
 
   static flags = {
     version: Flags.version({ char: 'v' }),
-    help: Flags.help({ char: 'h' }),
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    help: { ...Flags.help({ char: 'h' }), parse: async (_: any, cmd: Command) => {
+      cmd.log(await OclifUtils.generateHelpText(cmd));
+      cmd.exit(0);
+    } },
     'update-readme.md': Flags.boolean({ hidden: true, description: 'For developers only, don\'t use' }),
 
     region: Flags.string({ char: 'r', description: 'AWS region (required if you don\'t have AWS_REGION environment variable configured)' }),
@@ -53,7 +57,7 @@ It generates website files locally and can optionally launch a local server for 
   }
 
   async run(): Promise<void> {
-    const options = await this.parse() as CommandOptions<typeof AwsServerlessDataflow>;
+    const options = await this.parse(AwsServerlessDataflow) as CommandOptions<typeof AwsServerlessDataflow>;
     if (options.flags['update-readme.md']) {
       await OclifUtils.injectHelpTextIntoReadmeMd(this);
       return;

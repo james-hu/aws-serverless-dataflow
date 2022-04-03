@@ -9,10 +9,11 @@
   "bugs": "https://github.com/james-hu/aws-serverless-dataflow/issues",
   "dependencies": {
     "@handy-common-utils/aws-utils": "^1.0.6",
-    "@handy-common-utils/oclif-utils": "^1.1.1",
+    "@handy-common-utils/oclif-utils": "^1.1.2",
     "@handy-common-utils/promise-utils": "^1.2.5",
     "@oclif/core": "^1.6.1",
     "@oclif/plugin-help": "^5.1.12",
+    "@oclif/plugin-plugins": "^2.1.0",
     "@oclif/plugin-warn-if-update-available": "^2.0.4",
     "aws-sdk": "^2.1096.0",
     "cli-ux": "^5.6.3",
@@ -28,7 +29,6 @@
   },
   "devDependencies": {
     "@handy-common-utils/dev-dependencies": "^1.1.1",
-    "@oclif/dev-cli": "^1.26.10",
     "@oclif/test": "^2.1.0",
     "@types/fs-extra": "^8.1.2",
     "@types/js-string-escape": "^1.0.0",
@@ -36,6 +36,7 @@
     "@types/matcher": "^2.0.0",
     "@types/ncp": "^2.0.5",
     "browserify": "^17.0.0",
+    "oclif": "^2.6.1",
     "pkg": "^5.4.1"
   },
   "engines": {
@@ -83,6 +84,8 @@
   "oclif": {
     "bin": "aws-serverless-dataflow",
     "plugins": [
+      "@oclif/plugin-plugins",
+      "@oclif/plugin-help",
       "@oclif/plugin-warn-if-update-available"
     ],
     "warn-if-update-available": {
