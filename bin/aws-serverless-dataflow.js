@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
-require('../lib')
+const path = require('path')
+const oclif = require('@oclif/core')
+
+require(path.join('..', 'lib'))
   .run()
-  .catch(require('@oclif/errors/handle'));
+  .then(oclif.flush)
+  .catch(oclif.Errors.handle)
