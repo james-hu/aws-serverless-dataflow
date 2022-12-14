@@ -101,5 +101,9 @@
     "pkg": "npm run prepare && pkg .",
     "preversion": "./bin/run --update-readme.md && git add README.md"
   },
-  "types": "lib/index.d.ts"
+  "types": "lib/index.d.ts",
+  "volta": {
+    "node": "16.17.1",
+    "npm": "8.19.2"
+  }
 }
