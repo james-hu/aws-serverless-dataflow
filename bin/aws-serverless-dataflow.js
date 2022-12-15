@@ -3,7 +3,7 @@
 const path = require('path')
 const oclif = require('@oclif/core')
 
-require(path.join('..', 'lib'))
+require('../lib')
   .run()
   .then(oclif.flush)
   .catch(oclif.Errors.handle)
