@@ -36,7 +36,7 @@
     "@types/ncp": "^2.0.5",
     "browserify": "^17.0.0",
     "oclif": "^3.0.1",
-    "pkg": "^5.7.0"
+    "pkg": "^5.8.0"
   },
   "engines": {
     "node": ">=8.0.0"
@@ -98,7 +98,7 @@
     "pretest": "eslint . --ext .ts",
     "test": "nyc mocha",
     "prepare": "shx rm -rf dist lib && tsc && browserify lib/browser-utils.js -o site/js/browser-utils.js",
-    "pkg": "npm run prepare && pkg .",
+    "pkg": "npm run prepare && pkg --compress GZip .",
     "preversion": "./bin/run --update-readme.md && git add README.md"
   },
   "types": "lib/index.d.ts",
