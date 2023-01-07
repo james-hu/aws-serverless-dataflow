@@ -44,8 +44,7 @@
   "files": [
     "/bin",
     "/lib",
-    "/site",
-    "/bb-commons/typescript"
+    "/site"
   ],
   "homepage": "https://github.com/james-hu/aws-serverless-dataflow",
   "keywords": [
