@@ -41,11 +41,11 @@ jobs:
         done
         rm LICENSE README.md xdg-open
     - name: Generate checksum
-        uses: jmgilman/actions-generate-checksum@v1
-        with:
-          output: pkg/checksum.txt
-          patterns: |
-            pkg/*.tar.gz
+      uses: jmgilman/actions-generate-checksum@v1
+      with:
+        output: pkg/checksum.txt
+        patterns: |
+          pkg/*.tar.gz
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
