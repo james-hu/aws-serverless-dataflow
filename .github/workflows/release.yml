@@ -21,6 +21,8 @@ jobs:
     - run: npm test
     - name: Setup ldid
       uses: MOZGIII/install-ldid-action@v1
+      with:
+        tag: v2.1.5-procursus6
     - name: Setup QEMU/binfmt
       uses: docker/setup-qemu-action@v2
       with:
