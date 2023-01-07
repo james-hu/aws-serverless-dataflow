@@ -42,12 +42,7 @@ jobs:
             fi
         done
         rm LICENSE README.md xdg-open
-    - name: Generate checksum
-      uses: jmgilman/actions-generate-checksum@v1
-      with:
-        output: pkg/checksum.txt
-        patterns: |
-          pkg/*.tar.gz
+        find * -name '*.tar.gz' | xargs shasum -a 256 > checksum.txt
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
