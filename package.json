@@ -36,7 +36,7 @@
     "@types/ncp": "^2.0.5",
     "browserify": "^17.0.0",
     "oclif": "^3.0.1",
-    "pkg": "^5.7.0"
+    "pkg": "^5.8.0"
   },
   "engines": {
     "node": ">=8.0.0"
@@ -44,8 +44,7 @@
   "files": [
     "/bin",
     "/lib",
-    "/site",
-    "/bb-commons/typescript"
+    "/site"
   ],
   "homepage": "https://github.com/james-hu/aws-serverless-dataflow",
   "keywords": [
@@ -71,12 +70,15 @@
       "bin/aws-serverless-dataflow"
     ],
     "assets": [
-      "site/**/*"
+      "site/**/*",
+      "node_modules/open/xdg-open"
     ],
     "outputPath": "pkg",
     "targets": [
       "node16-macos-x64",
+      "node16-macos-arm64",
       "node16-linux-x64",
+      "node16-linux-arm64",
       "node16-win-x64"
     ]
   },
@@ -97,8 +99,10 @@
   "scripts": {
     "pretest": "eslint . --ext .ts",
     "test": "nyc mocha",
+    "patch-open": "replace-in-file node_modules/open/index.js \"__dirname, *'xdg-open'\" \"__dirname, '.', 'xdg-open'\"",
+    "postinstall": "npm run patch-open",
     "prepare": "shx rm -rf dist lib && tsc && browserify lib/browser-utils.js -o site/js/browser-utils.js",
-    "pkg": "npm run prepare && pkg .",
+    "pkg": "npm run prepare && pkg --compress GZip .",
     "preversion": "./bin/run --update-readme.md && git add README.md"
   },
   "types": "lib/index.d.ts",

@@ -7,23 +7,50 @@ on:
 
 jobs:
   build-and-release:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       with:
-        node-version: 16.x
+        node-version-file: package.json
         cache: 'npm'
         cache-dependency-path: |
           package.json
           package-lock.json
     - run: npm ci
     - run: npm test
-    - run: npm run pkg
+    - name: Setup ldid
+      uses: MOZGIII/install-ldid-action@v1
+    - name: Setup QEMU/binfmt
+      uses: docker/setup-qemu-action@v2
+      with:
+        platforms: arm64
+    - name: Build packages
+      run: |
+        npm run pkg
+        cd pkg
+        rm -rf *.tar.gz
+        cp ../LICENSE ../README.md ../node_modules/open/xdg-open .
+        for FILE in $(find . -size +10M); do
+            echo "Processing: $FILE"
+            if [[ $FILE =~ exe$ ]]; then
+                tar --transform "s|$FILE|aws-serverless-dataflow.exe|" -czvf ${FILE%.*}.tar.gz $FILE LICENSE README.md
+            else
+                tar --transform "s|$FILE|aws-serverless-dataflow|" -czvf $FILE.tar.gz $FILE LICENSE README.md xdg-open
+            fi
+        done
+        rm LICENSE README.md xdg-open
+    - name: Generate checksum
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          output: pkg/checksum.txt
+          patterns: |
+            pkg/*.tar.gz
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          pkg/*
+          pkg/*.tar.gz
+          pkg/checksum.txt
 
 
