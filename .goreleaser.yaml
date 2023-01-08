@@ -12,6 +12,9 @@ before:
     - cp pkg/aws-serverless-dataflow-linux-arm64 dist/aws-serverless-dataflow_linux_arm64/aws-serverless-dataflow
     - mkdir dist/aws-serverless-dataflow_windows_amd64
     - cp pkg/aws-serverless-dataflow-win-x64.exe dist/aws-serverless-dataflow_windows_amd64/aws-serverless-dataflow.exe
+builds:
+  -
+    skip: true
 archives:
   - replacements:
       darwin: Darwin
