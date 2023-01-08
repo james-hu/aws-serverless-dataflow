@@ -1,37 +1,23 @@
-before:
-  hooks:
-    - rm -rf dist
-    - mkdir dist
-    - mkdir dist/aws-serverless-dataflow_darwin_amd64
-    - cp pkg/aws-serverless-dataflow-macos-x64 dist/aws-serverless-dataflow_darwin_amd64/aws-serverless-dataflow
-    - mkdir dist/aws-serverless-dataflow_darwin_arm64
-    - cp pkg/aws-serverless-dataflow-macos-arm64 dist/aws-serverless-dataflow_darwin_arm64/aws-serverless-dataflow
-    - mkdir dist/aws-serverless-dataflow_linux_amd64
-    - cp pkg/aws-serverless-dataflow-linux-x64 dist/aws-serverless-dataflow_linux_amd64/aws-serverless-dataflow
-    - mkdir dist/aws-serverless-dataflow_linux_arm64
-    - cp pkg/aws-serverless-dataflow-linux-arm64 dist/aws-serverless-dataflow_linux_arm64/aws-serverless-dataflow
-    - mkdir dist/aws-serverless-dataflow_windows_amd64
-    - cp pkg/aws-serverless-dataflow-win-x64.exe dist/aws-serverless-dataflow_windows_amd64/aws-serverless-dataflow.exe
 builds:
   -
-    skip: true
-archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+    targets:
+      - linux_amd64_v1
+      - linux_arm64
+      - darwin_amd64_v1
+      - darwin_arm64
+      - windows_amd64_v1
+    hooks:
+      post:
+        - cp pkg/aws-serverless-dataflow-macos-x64 dist/aws-serverless-dataflow_darwin_amd64_v1/aws-serverless-dataflow
+        - cp pkg/aws-serverless-dataflow-macos-arm64 dist/aws-serverless-dataflow_darwin_arm64/aws-serverless-dataflow
+        - cp pkg/aws-serverless-dataflow-linux-x64 dist/aws-serverless-dataflow_linux_amd64_v1/aws-serverless-dataflow
+        - cp pkg/aws-serverless-dataflow-linux-arm64 dist/aws-serverless-dataflow_linux_arm64/aws-serverless-dataflow
+        - cp pkg/aws-serverless-dataflow-win-x64.exe dist/aws-serverless-dataflow_windows_amd64_v1/aws-serverless-dataflow.exe
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
 
 brews:
   -
@@ -73,7 +59,7 @@ brews:
 
     # Template of your app's description.
     # Default is empty.
-    description: "A command-line tool for Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow"
+    description: "A command-line tool for visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow"
 
     # SPDX identifier of your app's license.
     # Default is empty.
@@ -85,7 +71,7 @@ brews:
     # If set to auto, the release will not be uploaded to the homebrew tap
     # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
     # Default is false.
-    skip_upload: true
+    skip_upload: false
 
 
 # modelines, feel free to remove those if you don't want/use them:
