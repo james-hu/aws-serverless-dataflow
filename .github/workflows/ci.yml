@@ -5,9 +5,7 @@ name: CI
 
 on:
   push:
-    branches: [ master, develop, feature/**, chore/**, bugfix/** ]
-  pull_request:
-    branches: [ master, develop ]
+    branches: [ master, main, develop, feature/**, chore/**, bugfix/**, hotfix/**, misc/**]
 
 jobs:
   build:
@@ -19,15 +17,16 @@ jobs:
         node-version: [14.x, 16.x, 18.x]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: |
-          package.json
-          package-lock.json
-    - run: npm ci
-    - run: npm test
-
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
