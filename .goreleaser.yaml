@@ -24,7 +24,10 @@ checksum:
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 
-brews:
+release:  # to GitHub releases
+  skip_upload: true
+
+brews:  # push to github.com/handy-common-utils/homebrew-tap
   -
     # NOTE: make sure the url_template, the token and given repo (github or
     # gitlab) owner and name are from the same kind.
