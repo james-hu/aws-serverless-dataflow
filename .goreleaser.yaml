@@ -8,10 +8,15 @@ builds:
       - windows_amd64_v1
     hooks:
       post:
+        - mkdir -p dist/aws-serverless-dataflow_darwin_amd64_v1
         - cp pkg/aws-serverless-dataflow-macos-x64 dist/aws-serverless-dataflow_darwin_amd64_v1/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_darwin_arm64
         - cp pkg/aws-serverless-dataflow-macos-arm64 dist/aws-serverless-dataflow_darwin_arm64/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_linux_amd64_v1
         - cp pkg/aws-serverless-dataflow-linux-x64 dist/aws-serverless-dataflow_linux_amd64_v1/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_linux_arm64
         - cp pkg/aws-serverless-dataflow-linux-arm64 dist/aws-serverless-dataflow_linux_arm64/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_windows_amd64_v1
         - cp pkg/aws-serverless-dataflow-win-x64.exe dist/aws-serverless-dataflow_windows_amd64_v1/aws-serverless-dataflow.exe
 
 checksum:
