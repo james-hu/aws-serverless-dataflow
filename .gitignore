@@ -13,3 +13,6 @@ tsconfig.tsbuildinfo
 browser-utils.js
 coverage
 pkg
+
+# this is the file built by go
+aws-serverless-dataflow
