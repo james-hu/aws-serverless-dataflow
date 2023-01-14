@@ -153,7 +153,8 @@ snapcrafts:
         # You can read the documentation about the available plugs and the
         # things they allow:
         # https://snapcraft.io/docs/reference/interfaces.
-        plugs: ["home", "system-files", "personal-files"]
+        plugs:
+          - home
 
 
 # modelines, feel free to remove those if you don't want/use them:
