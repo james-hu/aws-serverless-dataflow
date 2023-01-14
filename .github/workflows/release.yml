@@ -41,7 +41,11 @@ jobs:
     needs: test-and-build
     runs-on: ubuntu-latest
     steps:
-      - run: sudo snap install --classic snapcraft
+      # https://github.com/goreleaser/goreleaser/issues/1715#issuecomment-667002748
+      - run: |
+          sudo snap install --classic snapcraft
+          mkdir -p $HOME/.cache/snapcraft/download
+          mkdir -p $HOME/.cache/snapcraft/stage-packages
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
