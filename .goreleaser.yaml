@@ -1,0 +1,161 @@
+builds:
+  -
+    targets:
+      - linux_amd64_v1
+      - linux_arm64
+      - darwin_amd64_v1
+      - darwin_arm64
+      - windows_amd64_v1
+    hooks:
+      post:
+        - mkdir -p dist/aws-serverless-dataflow_darwin_amd64_v1
+        - cp pkg/aws-serverless-dataflow-macos-x64 dist/aws-serverless-dataflow_darwin_amd64_v1/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_darwin_arm64
+        - cp pkg/aws-serverless-dataflow-macos-arm64 dist/aws-serverless-dataflow_darwin_arm64/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_linux_amd64_v1
+        - cp pkg/aws-serverless-dataflow-linux-x64 dist/aws-serverless-dataflow_linux_amd64_v1/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_linux_arm64
+        - cp pkg/aws-serverless-dataflow-linux-arm64 dist/aws-serverless-dataflow_linux_arm64/aws-serverless-dataflow
+        - mkdir -p dist/aws-serverless-dataflow_windows_amd64_v1
+        - cp pkg/aws-serverless-dataflow-win-x64.exe dist/aws-serverless-dataflow_windows_amd64_v1/aws-serverless-dataflow.exe
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+release:  # to GitHub releases
+  skip_upload: false
+
+brews:  # push to github.com/handy-common-utils/homebrew-tap
+  -
+    # NOTE: make sure the url_template, the token and given repo (github or
+    # gitlab) owner and name are from the same kind.
+    # We will probably unify this in the next major version like it is
+    # done with scoop.
+
+    # GitHub/GitLab repository to push the formula to
+    tap:
+      # Repository owner template. (templateable)
+      owner: handy-common-utils
+
+      # Repository name. (templateable)
+      name: homebrew-tap
+
+    # Template for the url which is determined by the given Token (github,
+    # gitlab or gitea)
+    #
+    # Default depends on the client.
+    url_template: "https://github.com/james-hu/aws-serverless-dataflow/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # Git author used to commit to the repository.
+    # Defaults are shown.
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+
+    # The project name and current git tag are used in the format string.
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
+    # Folder inside the repository to put the formula.
+    # Default is the root folder.
+    folder: Formula
+
+    # Your app's homepage.
+    # Default is empty.
+    homepage: "https://github.com/james-hu/aws-serverless-dataflow"
+
+    # Template of your app's description.
+    # Default is empty.
+    description: "A command-line tool for visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow"
+
+    # SPDX identifier of your app's license.
+    # Default is empty.
+    license: "Apache-2.0"
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist folder only,
+    # leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the homebrew tap
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    # Default is false.
+    skip_upload: false
+
+snapcrafts:
+  -
+    # You can change the name of the package.
+    # Default: `{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}`
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+    # Whether to publish the snap to the snapcraft store.
+    # Remember you need to `snapcraft login` first.
+    # Defaults to false.
+    publish: true
+
+    # Single-line elevator pitch for your amazing snap.
+    # 79 char long at most.
+    summary: A command-line tool for visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow
+
+    # This the description of your snap. You have a paragraph or two to tell the
+    # most important story about your snap. Keep it under 100 words though,
+    # we live in tweetspace and your description wants to look good in the snap
+    # store.
+    description: For more information, see https://github.com/james-hu/aws-serverless-dataflow
+
+    # A guardrail to prevent you from releasing a snap to all your users before
+    # it is ready.
+    # `devel` will let you release only to the `edge` and `beta` channels in the
+    # store. `stable` will let you release also to the `candidate` and `stable`
+    # channels.
+    grade: stable
+
+    # Snaps can be setup to follow three different confinement policies:
+    # `strict`, `devmode` and `classic`. A strict confinement where the snap
+    # can only read and write in its own namespace is recommended. Extra
+    # permissions for strict snaps can be declared as `plugs` for the app, which
+    # are explained later. More info about confinement here:
+    # https://snapcraft.io/docs/reference/confinement
+    confinement: strict
+
+    # Your app's license, based on SPDX license expressions:
+    # https://spdx.org/licenses
+    # Default is empty.
+    license: Apache-2.0
+
+    # A snap of type base to be used as the execution environment for this snap.
+    # Valid values are:
+    # * bare - Empty base snap;
+    # * core - Ubuntu Core 16;
+    # * core18 - Ubuntu Core 18.
+    # Default is empty.
+    base: core20
+
+    # Add extra files on the resulting snap. Useful for including wrapper
+    # scripts or other useful static files. Source filenames are relative to the
+    # project directory. Destination filenames are relative to the snap prime
+    # directory.
+    # Default is empty.
+    extra_files:
+      - source: pkg/xdg-open
+        destination: bin/xdg-open
+        mode: 0755
+
+    # Each binary built by GoReleaser is an app inside the snap. In this section
+    # you can declare extra details for those binaries. It is optional.
+    # See: https://snapcraft.io/docs/snapcraft-app-and-service-metadata
+    apps:
+
+      # The name of the app must be the same name as the binary built or the snapcraft name.
+      aws-serverless-dataflow:
+
+        # If your app requires extra permissions to work outside of its default
+        # confined space, declare them here.
+        # You can read the documentation about the available plugs and the
+        # things they allow:
+        # https://snapcraft.io/docs/reference/interfaces.
+        plugs: ["home", "system-files", "personal-files"]
+
+
+# modelines, feel free to remove those if you don't want/use them:
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj

@@ -3,10 +3,13 @@ name: Release
 on:
   push:
     tags:
-      - "v*.*.*"
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
 
 jobs:
-  build-and-release:
+  test-and-build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -27,27 +30,35 @@ jobs:
       uses: docker/setup-qemu-action@v2
       with:
         platforms: arm64
-    - name: Build packages
-      run: |
-        npm run pkg
-        cd pkg
-        rm -rf *.tar.gz
-        cp ../LICENSE ../README.md ../node_modules/open/xdg-open .
-        for FILE in $(find . -size +10M); do
-            echo "Processing: $FILE"
-            if [[ $FILE =~ exe$ ]]; then
-                tar --transform "s|$FILE|aws-serverless-dataflow.exe|" -czvf ${FILE%.*}.tar.gz $FILE LICENSE README.md
-            else
-                tar --transform "s|$FILE|aws-serverless-dataflow|" -czvf $FILE.tar.gz $FILE LICENSE README.md xdg-open
-            fi
-        done
-        rm LICENSE README.md xdg-open
-        find * -name '*.tar.gz' | xargs shasum -a 256 > checksum.txt
-    - name: Release
-      uses: softprops/action-gh-release@v1
+    - name: Build executable files
+      run: npm run pkg
+    - name: Cache executable files built
+      uses: actions/cache/save@v3
       with:
-        files: |
-          pkg/*.tar.gz
-          pkg/checksum.txt
-
-
+        path: pkg
+        key: ${{ github.run_id }}-${{ github.run_number }}
+  goreleaser:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: git fetch --force --tags
+      - name: Restore cached executable files previously built
+        uses: actions/cache/restore@v3
+        with:
+          path: pkg
+          key: ${{ github.run_id }}-${{ github.run_number }}
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.19.3'
+          cache: true
+      - uses: goreleaser/goreleaser-action@v4
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GORELEASER_PAT }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
