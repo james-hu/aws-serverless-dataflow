@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+' # snapcraft does not like "v" prefix
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: write
@@ -60,25 +60,5 @@ jobs:
           version: latest
           args: release --rm-dist
         env:
-          GITHUB_TOKEN: ${{ secrets.GO_RELEASE_PAT }}
-  snapcraft:
-    needs: test-and-build
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - run: git fetch --force --tags
-    - name: Restore cached executable files previously built
-      uses: actions/cache/restore@v3
-      with:
-        path: pkg
-        key: ${{ github.run_id }}-${{ github.run_number }}
-    - uses: snapcore/action-build@v1
-      id: build
-    - uses: snapcore/action-publish@v1
-      env:
-        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-      with:
-        snap: ${{ steps.build.outputs.snap }}
-        release: stable
+          GITHUB_TOKEN: ${{ secrets.GORELEASER_PAT }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}

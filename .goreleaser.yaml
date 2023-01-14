@@ -25,7 +25,7 @@ snapshot:
   name_template: "{{ incpatch .Version }}-next"
 
 release:  # to GitHub releases
-  skip_upload: true
+  skip_upload: false
 
 brews:  # push to github.com/handy-common-utils/homebrew-tap
   -
@@ -90,7 +90,7 @@ snapcrafts:
     # Whether to publish the snap to the snapcraft store.
     # Remember you need to `snapcraft login` first.
     # Defaults to false.
-    publish: false
+    publish: true
 
     # Single-line elevator pitch for your amazing snap.
     # 79 char long at most.
