@@ -150,3 +150,7 @@ Development:
 To build binaries for arm64 processors, you need a Linux machine, with binfmt and ldid installed:
 - https://hub.docker.com/r/tonistiigi/binfmt
 - https://stackoverflow.com/a/27769297
+
+To debug goreleaser:
+
+```GITHUB_TOKEN=<the-token> goreleaser release --skip-validate --rm-dist --debug```
