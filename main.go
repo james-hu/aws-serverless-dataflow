@@ -1,4 +1,4 @@
-// This file exists to fool goreleaser
+// This file exists only to fool goreleaser
 
 package main
 

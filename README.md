@@ -146,6 +146,8 @@ Development:
 - Run for test: `./bin/run ...`
 - Release: `npm version patch -m "..." && npm publish`
 
+Please ignore `main.go` and `go.mod` files.
+They exist only because we are using *goreleaser*.
 
 To build binaries for arm64 processors, you need a Linux machine, with binfmt and ldid installed:
 - https://hub.docker.com/r/tonistiigi/binfmt
