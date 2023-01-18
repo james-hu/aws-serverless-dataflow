@@ -1,16 +1,25 @@
 aws-serverless-dataflow
 =======================
 
-Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow
+Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) components
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/aws-serverless-dataflow.svg)](https://npmjs.org/package/aws-serverless-dataflow)
 [![Downloads/week](https://img.shields.io/npm/dw/aws-serverless-dataflow.svg)](https://npmjs.org/package/aws-serverless-dataflow)
 [![License](https://img.shields.io/npm/l/aws-serverless-dataflow.svg)](https://github.com/james-hu/aws-serverless-dataflow/blob/master/package.json)
 
-This is a command line tool for visualising the connections among AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) components. To run it, you need to log into your AWS account from command line first.
+_aws-serverless-dataflow_ is a command line tool that can help you visualize the connections and dataflow among various AWS serverless components, such as AWS Lambda, API Gateway, SNS, SQS, etc. The tool surveys the serverless components in your AWS account, and then generates static website content that can be hosted on a website for viewing the diagrams.
 
-Typical usage (you don't need Node.js environment and npx if you have downloaded [precompiled binaries for MacOS/Windows/Linux](https://github.com/james-hu/aws-serverless-dataflow/releases)):
+The generated visual representation can help you to understand the architecture and data flow of their serverless application, and identify any issues or opportunities for optimization. 
+
+## Quick start
+
+_aws-serverless-dataflow_ can be installed through Homebrew (`brew install handy-common-utils/tap/aws-serverless-dataflow` for Linux or MacOS),
+snap (`snap install aws-serverless-dataflow`), npm (`npm i -g aws-serverless-dataflow`), or manual download (https://github.com/james-hu/aws-serverless-dataflow/releases). It can also be executed without installation through npx (`npx aws-serverless-dataflow`).
+
+Before running it, you need to log into your AWS account through command line first.
+
+Then, you can try something like this:
 
 ```sh-session
 $ npx aws-serverless-dataflow -r ap-southeast-2 -i '*boi*' -i '*datahub*' -x '*jameshu*' -c -s
@@ -29,58 +38,39 @@ Generating static website content in 'dataflow'... done
 Local server started. Ctrl-C to stop. Access URL: http://localhost:8002/
 ```
 
-The diagram can be viewed from a browser. This is what the diagram looks like:
+The command line in the example above searches for components in _ap-southeast-2_ region
+having _boi_ or _datahub_ in but not _jameshu_ in the ARN,
+and finds out which CloudFormation stack each component belongs to,
+stores the generated files in _./dataflow/_ directory,
+then launches a local web server at _http://localhost:8002/_
+and opens the local website in the default browser.
+
+This is what the website looks like:
 
 ![Screenshot](doc/aws-serverless-dataflow_screenshot.png)
 
-You can host the generated static files on a website if you like.
+You can copy and host the generated static content files on your own website if you'd like to.
 
 Command line option `-r ap-southeast-2` specifies AWS region,
-`-s` tells the command line to start up a local http server and then open the browser pointing to that local server for viewing generated content.
+`-s` tells the command line to start up a local web server and then open the local website in the default browser for viewing generated content.
 
 If you don't want to include all the resources,
 you can use `--include`/`-i` and `--exclude`/`-x` options to specify which to include and which to exclude.
-Both of them can have multiple appearances.
-A resource would be included if any of the `--include` wild card patterns matches and none of the `--include` wild card patterns matches.
+Both of them can have multiple appearances in the command line.
+A resource would be included if any of the `--include` wild card patterns matches and none of the `--exclude` wild card patterns matches.
 
 It may take a while for this tool to survey all relevant resources in your AWS account.
-To make it faster, you can try to increase parallelism by changing `--parallelism`/`-l` option which by default is 4.
+To make it faster, you can try to increase parallelism by changing `--parallelism`/`-l` option which by default has a value of 4.
 If you see `TooManyRequestsException: Rate exceeded` error, you can try decreasing it.
 
 `-c` or `--cloud-formation` would enable clustering resouces by CloudFormation stacks.
 It is useful when you would like to have a high level view.
 
-## Quick start
-
-### Option 1: download precompiled binaries 
-
-Precompiled binaries can be downloaded from the [release page on GitHub](https://github.com/james-hu/aws-serverless-dataflow/releases).
-
-You just need to download the version matching your OS (Windows, MacOS, or Linux) and then run it from a terminal/command window.
-
-### Option 2: install as NPM package
-
-If [Node.js](https://nodejs.org/) has already been installed in the computer,
-you can have aws-serverless-dataflow installed globally like this:
-
-```sh-session
-$ npm install -g aws-serverless-dataflow
-$ aws-serverless-dataflow ...
-...
-```
-
-Or, you can just invoke the latest version with `npx`:
-
-```sh-session
-$ npx aws-serverless-dataflow ...
-...
-```
-
-### --help
-
 By passing `-h` or `--help` to the command line, you can see all supported arguments and options.
 
-## Manual
+For more information on how to use _aws-serverless-dataflow_ and the available options and arguments, visit https://github.com/james-hu/aws-serverless-dataflow or run the `aws-serverless-dataflow --help` command.
+
+## Usage
 
 <!-- help start -->
 ```
