@@ -15,9 +15,9 @@ The generated visual representation can help you to understand the architecture 
 ## Quick start
 
 _aws-serverless-dataflow_ can be installed through Homebrew (`brew install handy-common-utils/tap/aws-serverless-dataflow` for Linux or MacOS),
-snap (`snap install aws-serverless-dataflow`), npm (`npm i -g aws-serverless-dataflow`), or manual download (https://github.com/james-hu/aws-serverless-dataflow/releases). It can also be executed without installation through npx (`npx aws-serverless-dataflow`).
+[snap](https://snapcraft.io/aws-serverless-dataflow) (`snap install aws-serverless-dataflow` for Linux except WSL), npm (`npm i -g aws-serverless-dataflow` for any system with Node.js installed), or manual download (https://github.com/james-hu/aws-serverless-dataflow/releases for Windows, Linux, and MacOS ). It can also be executed without installation through npx (`npx aws-serverless-dataflow` for any system with Node.js installed).
 
-Before running it, you need to log into your AWS account through command line first.
+Before running it, you need to log into your AWS account [through command line](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html) first.
 
 Then, you can try something like this:
 
