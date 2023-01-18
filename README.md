@@ -38,16 +38,20 @@ Generating static website content in 'dataflow'... done
 Local server started. Ctrl-C to stop. Access URL: http://localhost:8002/
 ```
 
-The command line in the example above searches for components in _ap-southeast-2_ region
-having _boi_ or _datahub_ in but not _jameshu_ in the ARN,
-and finds out which CloudFormation stack each component belongs to,
-stores the generated files in _./dataflow/_ directory,
-then launches a local web server at _http://localhost:8002/_
+The command line in the example above
+
+1. searches for components in _ap-southeast-2_ region
+having _boi_ or _datahub_ but not _jameshu_ in the ARN,
+2. and finds out which CloudFormation stack each component belongs to,
+3. stores the generated files in _./dataflow/_ directory,
+4. then launches a local web server at _http://localhost:8002/_
 and opens the local website in the default browser.
 
 This is what the website looks like:
 
 ![Screenshot](doc/aws-serverless-dataflow_screenshot.png)
+
+There are a few options on the web page allowing further customisation of the diagram.
 
 You can copy and host the generated static content files on your own website if you'd like to.
 
