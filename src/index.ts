@@ -25,7 +25,7 @@ It generates website files locally and can optionally launch a local server for 
 
     region: Flags.string({ char: 'r', description: 'AWS region (required if you don\'t have AWS_REGION environment variable configured)' }),
 
-    include: Flags.string({ char: 'i', default: ['*'], multiple: true, description: 'wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be includeed' }),
+    include: Flags.string({ char: 'i', default: ['*'], multiple: true, description: 'wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be included' }),
     exclude: Flags.string({ char: 'x', multiple: true, description: 'wildcard patterns for domain names and ARN of Lambda functions/SNS topics/SQS queues that should be excluded' }),
 
     'cloud-formation': Flags.boolean({ char: 'c', default: false, description: 'survey CloudFormation stack information (this takes more time)' }),

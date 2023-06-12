@@ -67,7 +67,7 @@ It may take a while for this tool to survey all relevant resources in your AWS a
 To make it faster, you can try to increase parallelism by changing `--parallelism`/`-l` option which by default has a value of 4.
 If you see `TooManyRequestsException: Rate exceeded` error, you can try decreasing it.
 
-`-c` or `--cloud-formation` would enable clustering resouces by CloudFormation stacks.
+`-c` or `--cloud-formation` would enable clustering resources by CloudFormation stacks.
 It is useful when you would like to have a high level view.
 
 By passing `-h` or `--help` to the command line, you can see all supported arguments and options.
@@ -92,7 +92,7 @@ FLAGS
   -h, --help                 Show CLI help.
   -i, --include=<value>...   [default: *] wildcard patterns for domain names and
                              ARN of Lambda functions/SNS topics/SQS queues that
-                             should be includeed
+                             should be included
   -l, --parallelism=<value>  [default: 4] approximately how many AWS API calls
                              are allowed at the same time
   -p, --port=<value>         [default: 8002] port number of the local http
