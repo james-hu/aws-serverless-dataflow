@@ -191,21 +191,26 @@ export class Generator {
       for (const resource of stack.resources) {
         let arn: string|null|undefined;
         switch (resource.ResourceType) {
-          case 'AWS::Lambda::Function':
+          case 'AWS::Lambda::Function': {
             arn = `arn:${stackArn?.partition}:lambda:${stackArn?.region}:${stackArn?.accountId}:function:${resource.PhysicalResourceId}`;
             break;
-          case 'AWS::SQS::Queue':
+          }
+          case 'AWS::SQS::Queue': {
             arn = inventory.sqsQueuesByUrl.get(resource.PhysicalResourceId!)?.QueueArn;
             break;
-          case 'AWS::SNS::Topic':
+          }
+          case 'AWS::SNS::Topic': {
             arn = resource.PhysicalResourceId!;
             break;
-          case 'AWS::DynamoDB::Table':
+          }
+          case 'AWS::DynamoDB::Table': {
             arn = `arn:${stackArn?.partition}:dynamodb:${stackArn?.region}:${stackArn?.accountId}:table/${resource.PhysicalResourceId}`;
             break;
-          case 'AWS::S3::Bucket':
+          }
+          case 'AWS::S3::Bucket': {
             arn = `arn::s3:::${resource.PhysicalResourceId}`; // this is not the actual ARN but is consistent with surveyor.ts
             break;
+          }
         }
         if (arn != null) {
           const node = nodes.get(arn);

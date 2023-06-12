@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-await-expression-member */
 import { DateTime } from 'luxon';
 import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { AwsUtils, promiseWithRetry } from '@handy-common-utils/aws-utils';

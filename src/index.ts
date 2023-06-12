@@ -16,7 +16,6 @@ It generates website files locally and can optionally launch a local server for 
 
   static flags = {
     version: Flags.version({ char: 'v' }),
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     help: { ...Flags.help({ char: 'h' }), parse: async (_: any, cmd: Command) => {
       cmd.log(await OclifUtils.generateHelpText(cmd));
       cmd.exit(0);
