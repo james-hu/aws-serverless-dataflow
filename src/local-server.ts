@@ -21,7 +21,7 @@ export class LocalServer {
       if (err) throw err;
       this.context.info(`Local server started. Ctrl-C to stop. Access URL: ${this.url}`);
       if (doOpen) {
-        this.open().then(() => this.stop());
+        this.open();
       }
     });
   }
