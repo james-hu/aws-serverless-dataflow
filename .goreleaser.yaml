@@ -113,7 +113,13 @@ snapcrafts:
           - home
           - network
           - removable-media
-
+          - dot-aws-config-credentials
+    plugs:
+      dot-aws-config-credentials:
+        interface: personal-files
+        read:
+        - $HOME/.aws/config
+        - $HOME/.aws/credentials
 
 # modelines, feel free to remove those if you don't want/use them:
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
