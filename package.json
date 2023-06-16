@@ -70,8 +70,7 @@
       "bin/aws-serverless-dataflow"
     ],
     "assets": [
-      "site/**/*",
-      "node_modules/open/xdg-open"
+      "site/**/*"
     ],
     "outputPath": "pkg",
     "targets": [
@@ -99,10 +98,8 @@
   "scripts": {
     "pretest": "eslint . --ext .ts",
     "test": "nyc mocha",
-    "patch-open": "replace-in-file node_modules/open/index.js \"__dirname, *'xdg-open'\" \"__dirname, '.', 'xdg-open'\"",
-    "postinstall": "npm run patch-open",
     "prepare": "shx rm -rf dist lib && tsc && browserify lib/browser-utils.js -o site/js/browser-utils.js",
-    "pkg": "npm run prepare && pkg --compress GZip . && shx cp node_modules/open/xdg-open pkg",
+    "pkg": "npm run prepare && pkg --compress GZip .",
     "preversion": "./bin/run --update-readme.md && git add README.md"
   },
   "types": "lib/index.d.ts",
