@@ -96,10 +96,10 @@ snapcrafts:
     # project directory. Destination filenames are relative to the snap prime
     # directory.
     # Default is empty.
-    extra_files:
-      - source: pkg/xdg-open
-        destination: bin/xdg-open
-        mode: 0755
+    # extra_files:
+    #   - source: pkg/xdg-open
+    #     destination: bin/xdg-open
+    #     mode: 0755
 
     # Each binary built by GoReleaser is an app inside the snap. In this section
     # you can declare extra details for those binaries. It is optional.
