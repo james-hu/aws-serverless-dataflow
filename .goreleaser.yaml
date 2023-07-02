@@ -35,7 +35,7 @@ brews:  # push to github.com/handy-common-utils/homebrew-tap
     # done with scoop.
 
     # GitHub/GitLab repository to push the formula to
-    tap:
+    repository:
       owner: handy-common-utils
       name: homebrew-tap
 
