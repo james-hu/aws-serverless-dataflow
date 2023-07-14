@@ -1,7 +1,7 @@
 {
   "name": "aws-serverless-dataflow",
   "description": "Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "author": "James Hu",
   "bin": {
     "aws-serverless-dataflow": "./bin/aws-serverless-dataflow.js"
