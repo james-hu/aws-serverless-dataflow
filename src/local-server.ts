@@ -24,7 +24,7 @@ export class LocalServer {
         try {
           this.open();
         } catch (error) {
-          this.context.info(`Failed to open browser: ${(error as Error).message}`);
+          this.context.info(`Unable to open browser: ${(error as Error).message}`);
         }
       }
     });
