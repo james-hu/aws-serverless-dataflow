@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { APIGateway, ApiGatewayV2, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { AwsUtils, promiseWithRetry } from '@handy-common-utils/aws-utils';
 import { PromiseUtils } from '@handy-common-utils/promise-utils';
-import { Context } from './context';
+import { ApiGatewayApiDetails, Context } from './context';
 import buildIncludeExcludeMatcher from './matcher';
 
 export class Surveyor {
@@ -61,7 +61,6 @@ export class Surveyor {
             return { ...mapping, basePathUrl, domainAndBasePathUrl };
           }),
         });
-        this.context.info(`Domain name ${domainName}`, inventory.apigDomainNamesByName.get(domainName));
       }
     });
     this.context.info(`Surveyed ${inventory.apigDomainNamesByName.size}/${domainNameObjects.length} domains in API Gateway`);
@@ -76,29 +75,34 @@ export class Surveyor {
       const resources = await AwsUtils.fetchAllByPosition<APIGateway.Resource>(
         pagingParam => promiseWithRetry(() => apig.getResources({ ...pagingParam, restApiId })),
       );
-      const lambdaFunctionArns = new Set<string>(); // at resource level
-      const detailedResources = new Array<APIGateway.Resource & {
-        integrations: Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>;
-      }>();
+      const lambdaFunctionArns = new Set<string>();
+      const allResourceDetails: ApiGatewayApiDetails['routes'] = [];
       for (const resource of resources) {
-        const resourceDetails = { ...resource, integrations: new Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>() };
         if (resource.resourceMethods) {
           for (const httpMethod of Object.keys(resource.resourceMethods)) {
+            const resourceDetails: typeof allResourceDetails[number] = {
+              ...resource,
+              routeKey: `${httpMethod} ${resource.path}`,
+              integrations: [],
+            };
             const integration = await promiseWithRetry(() => apig.getIntegration({ restApiId, resourceId: resource.id!, httpMethod }));
-            const lambdaFunctionArn = this.retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(integration.uri);
-            const integrationDetails = { ...integration, lambdaFunctionArn };
-            if (lambdaFunctionArn) {
-              lambdaFunctionArns.add(lambdaFunctionArn);
+            if (integration.type !== 'MOCK') { // MOCK could mean other configured integrations, such like OPTIONS, static website, etc.
+              const lambdaFunctionArn = this.retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(integration.uri);
+              const integrationDetails = { ...integration, lambdaFunctionArn };
+              if (lambdaFunctionArn) {
+                lambdaFunctionArns.add(lambdaFunctionArn);
+              }
+              resourceDetails.integrations.push(integrationDetails);
+              allResourceDetails.push(resourceDetails);
             }
-            resourceDetails.integrations.push(integrationDetails);
           }
         }
-        detailedResources.push(resourceDetails);
       }
-      const restApiDetails = { ...restApi, lambdaFunctionArns, resources: detailedResources };
-      this.context.info(`REST API details ${restApiId}`, restApiDetails);
+      const restApiDetails = { ...restApi, lambdaFunctionArns, routes: allResourceDetails };
+      // this.context.info(`REST API details ${restApiId}`, JSON.stringify(restApiDetails, null, 2));
       inventory.apigApisById.set(restApiId, restApiDetails);
     });
+
     // HTTP APIs
     const httpApis = await AwsUtils.fetchAllByNextToken<ApiGatewayV2.Api>(
       pagingParam => promiseWithRetry(() => apig2.getApis({ ...pagingParam })),
@@ -107,53 +111,49 @@ export class Surveyor {
 
     await PromiseUtils.inParallel(parallelism, httpApis, async httpApi => {
       const httpApiId = httpApi.ApiId!;
-      this.context.info(`HTTP API ${httpApiId}`, httpApi);
       const routes = await AwsUtils.fetchAllByNextToken<ApiGatewayV2.Route>(
         pagingParam => promiseWithRetry(() => apig2.getRoutes({ ...pagingParam, ApiId: httpApiId })),
         'Items',
       );
-      this.context.info(`Routes ${httpApiId}`, routes);
       const integrations = await AwsUtils.fetchAllByNextToken<ApiGatewayV2.Integration>(
         pagingParam => promiseWithRetry(() => apig2.getIntegrations({ ...pagingParam, ApiId: httpApiId })),
         'Items',
       );
       const integrationsById = Object.fromEntries(integrations.map(integration => [integration.IntegrationId!, integration]));
-      this.context.info(`Integrations ${httpApiId}`, integrations);
+      // this.context.info(`Integrations ${httpApiId}`, integrations);
 
       const lambdaFunctionArns = new Set<string>(); // at resource level
-      const detailedResources = new Array<APIGateway.Resource & {
-        integrations: Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>;
-      }>();
+      const allRouteDetails: ApiGatewayApiDetails['routes'] = [];
       for (const route of routes) {
-        const path = route.RouteKey;
-        const resourceDetails = {
+        const routeDetails: typeof allRouteDetails[number]  = {
           ...route,
-          path,
-          integrations: new Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>(),
+          routeKey: route.RouteKey,
+          integrations: [],
         };
         if (route.Target && route.Target.startsWith('integrations/')) {
           const integrationId = route.Target.slice('integrations/'.length);
           const integration = integrationsById[integrationId];
-          const lambdaFunctionArn = integration.IntegrationUri || null;
+          const lambdaFunctionArn = integration.IntegrationUri;
           const integrationDetails = { ...integration, lambdaFunctionArn };
           if (lambdaFunctionArn) {
             lambdaFunctionArns.add(lambdaFunctionArn);
           }
-          resourceDetails.integrations.push(integrationDetails);
+          routeDetails.integrations.push(integrationDetails);
         }
-        detailedResources.push(resourceDetails);
+        allRouteDetails.push(routeDetails);
       }
 
-      const httpApiDetails = { ...httpApi, lambdaFunctionArns, resources: detailedResources };
-      this.context.info(`HTTP API details ${httpApiId}`, httpApiDetails);
+      const httpApiDetails = { ...httpApi, lambdaFunctionArns, routes: allRouteDetails };
+      // this.context.debug(`HTTP API details ${httpApiId}`, httpApiDetails);
       inventory.apigApisById.set(httpApiId, httpApiDetails);
     });
-    this.context.info(`Surveyed ${restApis.length} APIs in API Gateway`);
+
+    this.context.info(`Surveyed ${restApis.length} REST APIs and ${httpApis.length} HTTP APIs in API Gateway`);
   }
 
-  retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(uri?: string): string | null {
+  retrieveLambdaFunctionArnFromApiGatewayIntegrationUri(uri?: string): string | undefined {
     if (!uri || !/\/functions\/arn:.*:lambda:/.test(uri) || !uri.endsWith('/invocations')) {
-      return null;
+      return undefined;
     }
     return uri.replace(/.*\/functions\/arn:/, 'arn:').replace(/\/invocations$/, '');
   }

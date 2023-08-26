@@ -156,8 +156,8 @@ export class Generator {
           group: Group.BasePath,
         });
         const restApi = inventory.apigApisById.get(mapping.restApiId!);
-        if (restApi?.resources) {
-          for (const resource of restApi.resources) {
+        if (restApi?.routes) {
+          for (const resource of restApi.routes) {
             const domainAndFullPathUrl = `${domainAndBasePathUrl}/${resource.routeKey}`;
             nodes.set(domainAndFullPathUrl, {
               id: domainAndFullPathUrl,
@@ -358,9 +358,9 @@ export class Generator {
           to: domainAndBasePathUrl,
           relation: Relation.Host,
         });
-        const restApi = inventory.apigApisById.get(mapping.restApiId!);
-        if (restApi) {
-          for (const resource of restApi.resources) {
+        const api = inventory.apigApisById.get(mapping.restApiId!);
+        if (api) {
+          for (const resource of api.routes) {
             const domainAndFullPathUrl = `${domainAndBasePathUrl}/${resource.routeKey}`;
             edges.set(`${domainAndBasePathUrl}->${domainAndFullPathUrl}`, {
               from: domainAndBasePathUrl,

@@ -1,4 +1,4 @@
-import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
+import { APIGateway, ApiGatewayV2, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { ServiceConfigurationOptions } from 'aws-sdk/lib/service';
 import { CliUx } from '@oclif/core';
 import AwsServerlessDataflow = require('.');
@@ -24,10 +24,11 @@ type SqsQueueDetails = SQS.QueueAttributeMap & {
   QueueArn: string;
   RedrivePolicy: string;
 };
-type ApiGatewayRestApiDetails = APIGateway.RestApi & {
+export type ApiGatewayApiDetails = (APIGateway.RestApi|ApiGatewayV2.Api) & {
   lambdaFunctionArns: Set<string>;
-  resources: Array<APIGateway.Resource & {
-    integrations: Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>;
+  routes: Array<(APIGateway.Resource|ApiGatewayV2.Route) & {
+    routeKey: string;
+    integrations: Array<(APIGateway.Integration|ApiGatewayV2.Integration) & { lambdaFunctionArn?: string }>;
   }>;
 }
 type CloudFormationStackDetails = CloudFormation.StackSummary & {
@@ -59,7 +60,7 @@ export class Context {
     sqsQueuesByArn: new Map<string, SqsQueueDetails>(),
     s3BucketsByArn: new Map<string, S3BucketDetails>(),
     dynamoDbTablesByArn: new Map<string, DynamoDbTableDetails>(),
-    apigApisById: new Map<string, ApiGatewayRestApiDetails>(),
+    apigApisById: new Map<string, ApiGatewayApiDetails>(),
     apigDomainNamesByName: new Map<string, APIGateway.DomainName & {
       basePathMappings: Array<APIGateway.BasePathMapping & {
         basePathUrl: string;
