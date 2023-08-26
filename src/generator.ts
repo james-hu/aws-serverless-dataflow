@@ -50,6 +50,7 @@ enum Group {
   LambdaFunction = 'LambdaFunction',
   DomainName = 'DomainName',
   BasePath = 'BasePath',
+  Route = 'Route',
   CloudFormationStack = 'CfStack',
   S3Bucket = 'S3Bucket',
   DynamoDbTable = 'DynamoDbTable',
@@ -154,6 +155,17 @@ export class Generator {
           label: basePathUrl,
           group: Group.BasePath,
         });
+        const restApi = inventory.apigApisById.get(mapping.restApiId!);
+        if (restApi?.resources) {
+          for (const resource of restApi.resources) {
+            const domainAndFullPathUrl = `${domainAndBasePathUrl}/${resource.routeKey}`;
+            nodes.set(domainAndFullPathUrl, {
+              id: domainAndFullPathUrl,
+              label: resource.routeKey,
+              group: Group.Route,
+            });
+          }
+        }
       }
     }
 
@@ -340,7 +352,6 @@ export class Generator {
     // Domain Names & Base Path mappings, and Lambda Functions mapped
     for (const domain of inventory.apigDomainNamesByName.values()) {
       for (const mapping of domain.basePathMappings) {
-        // const basePathUrl = `/${mapping.basePathUrl}`;
         const domainAndBasePathUrl = mapping.domainAndBasePathUrl;
         edges.set(domainAndBasePathUrl, {
           from: domain.domainName!,
@@ -349,13 +360,21 @@ export class Generator {
         });
         const restApi = inventory.apigApisById.get(mapping.restApiId!);
         if (restApi) {
-          for (const functionArn of restApi.lambdaFunctionArns) {
-            const id = `${domainAndBasePathUrl}->${functionArn}`;
-            edges.set(id, {
+          for (const resource of restApi.resources) {
+            const domainAndFullPathUrl = `${domainAndBasePathUrl}/${resource.routeKey}`;
+            edges.set(`${domainAndBasePathUrl}->${domainAndFullPathUrl}`, {
               from: domainAndBasePathUrl,
-              to: functionArn,
+              to: domainAndFullPathUrl,
               relation: Relation.Interface,
             });
+            for (const integration of resource.integrations) {
+              const id = `${domainAndFullPathUrl}-${integration.lambdaFunctionArn}`;
+              edges.set(id, {
+                from: domainAndFullPathUrl,
+                to: integration.lambdaFunctionArn!,
+                relation: Relation.Interface,
+              });
+            }
           }
         }
       }
