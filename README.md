@@ -28,7 +28,7 @@ Surveyed 72/224 queues in SQS
 Surveyed 48/209 topics in SNS
 Surveyed 65/250 subscriptions in SNS
 Surveyed 100/1115 stacks in CloudFormation
-Surveyed 120 APIs in API Gateway
+Surveyed 98 REST APIs and 54 HTTP APIs in API Gateway
 (1/2) Surveying API Gateway, SQS, SNS and CloudFormation... done
 Surveyed 85/410 buckets in S3
 Surveyed 120/464 functions in Lambda
