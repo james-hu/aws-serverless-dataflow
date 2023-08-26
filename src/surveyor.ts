@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/no-await-expression-member */
 import { DateTime } from 'luxon';
-import { APIGateway, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
+import { APIGateway, ApiGatewayV2, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
 import { AwsUtils, promiseWithRetry } from '@handy-common-utils/aws-utils';
 import { PromiseUtils } from '@handy-common-utils/promise-utils';
 import { Context } from './context';
@@ -41,6 +41,7 @@ export class Surveyor {
     const parallelism = this.context.options.flags.parallelism;
     const inventory = this.context.inventory;
     const apig = new APIGateway(this.context.awsOptions);
+    const apig2 = new ApiGatewayV2(this.context.awsOptions);
 
     // Domain Names
     const domainNameObjects = await AwsUtils.fetchAllByPosition<APIGateway.DomainName>(
@@ -60,6 +61,7 @@ export class Surveyor {
             return { ...mapping, basePathUrl, domainAndBasePathUrl };
           }),
         });
+        this.context.info(`Domain name ${domainName}`, inventory.apigDomainNamesByName.get(domainName));
       }
     });
     this.context.info(`Surveyed ${inventory.apigDomainNamesByName.size}/${domainNameObjects.length} domains in API Gateway`);
@@ -94,7 +96,57 @@ export class Surveyor {
         detailedResources.push(resourceDetails);
       }
       const restApiDetails = { ...restApi, lambdaFunctionArns, resources: detailedResources };
+      this.context.info(`REST API details ${restApiId}`, restApiDetails);
       inventory.apigApisById.set(restApiId, restApiDetails);
+    });
+    // HTTP APIs
+    const httpApis = await AwsUtils.fetchAllByNextToken<ApiGatewayV2.Api>(
+      pagingParam => promiseWithRetry(() => apig2.getApis({ ...pagingParam })),
+      'Items',
+    );
+
+    await PromiseUtils.inParallel(parallelism, httpApis, async httpApi => {
+      const httpApiId = httpApi.ApiId!;
+      this.context.info(`HTTP API ${httpApiId}`, httpApi);
+      const routes = await AwsUtils.fetchAllByNextToken<ApiGatewayV2.Route>(
+        pagingParam => promiseWithRetry(() => apig2.getRoutes({ ...pagingParam, ApiId: httpApiId })),
+        'Items',
+      );
+      this.context.info(`Routes ${httpApiId}`, routes);
+      const integrations = await AwsUtils.fetchAllByNextToken<ApiGatewayV2.Integration>(
+        pagingParam => promiseWithRetry(() => apig2.getIntegrations({ ...pagingParam, ApiId: httpApiId })),
+        'Items',
+      );
+      const integrationsById = Object.fromEntries(integrations.map(integration => [integration.IntegrationId!, integration]));
+      this.context.info(`Integrations ${httpApiId}`, integrations);
+
+      const lambdaFunctionArns = new Set<string>(); // at resource level
+      const detailedResources = new Array<APIGateway.Resource & {
+        integrations: Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>;
+      }>();
+      for (const route of routes) {
+        const path = route.RouteKey;
+        const resourceDetails = {
+          ...route,
+          path,
+          integrations: new Array<APIGateway.Integration & { lambdaFunctionArn: string | null }>(),
+        };
+        if (route.Target && route.Target.startsWith('integrations/')) {
+          const integrationId = route.Target.slice('integrations/'.length);
+          const integration = integrationsById[integrationId];
+          const lambdaFunctionArn = integration.IntegrationUri || null;
+          const integrationDetails = { ...integration, lambdaFunctionArn };
+          if (lambdaFunctionArn) {
+            lambdaFunctionArns.add(lambdaFunctionArn);
+          }
+          resourceDetails.integrations.push(integrationDetails);
+        }
+        detailedResources.push(resourceDetails);
+      }
+
+      const httpApiDetails = { ...httpApi, lambdaFunctionArns, resources: detailedResources };
+      this.context.info(`HTTP API details ${httpApiId}`, httpApiDetails);
+      inventory.apigApisById.set(httpApiId, httpApiDetails);
     });
     this.context.info(`Surveyed ${restApis.length} APIs in API Gateway`);
   }

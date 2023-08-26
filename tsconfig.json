@@ -4,6 +4,7 @@
     "src/**/*"
   ],
   "compilerOptions": {
+    "lib": ["ES2019"],
     "skipLibCheck": true,
     "outDir": "lib"
   }
