@@ -241,6 +241,13 @@ export class Generator {
     return stacks;
   }
 
+  convertSqsUrlToArn(url?: string): string | undefined {
+    if (!url || !/^http.*\/\/sqs\..+\/.+\/.+/.test(url)) {
+      return undefined;
+    }
+    return url.replace(/^http.*\/\/sqs\./, 'arn:aws:sqs:').replace(/\.[.a-z-]+\.com\//, ':').replace('/', ':');
+  }
+
   generateEdges(): Map<string, Edge> {
     const inventory = this.context.inventory;
     const edges = new Map<string, Edge>();
@@ -306,22 +313,23 @@ export class Generator {
       // environment variables pointing to other resources
       if (lambda.Environment?.Variables) {
         for (const entry of Object.entries(lambda.Environment.Variables)) {
-          const arn = entry[1];
-          if (inventory.snsTopicsByArn.has(arn)) {
-            const id = `${lambdaArn.arn}->${arn}`;
+          const arnOrUrl = entry[1];
+          if (inventory.snsTopicsByArn.has(arnOrUrl)) {
+            const id = `${lambdaArn.arn}->${arnOrUrl}`;
             edges.set(id, {
               from: lambdaArn.arn,
-              to: arn,
+              to: arnOrUrl,
               relation: Relation.User,
               arrows: Arrows.None,
               dashes: true,
             });
           }
-          if (inventory.sqsQueuesByArn.has(arn)) {
-            const id = `${lambdaArn.arn}->${arn}`;
+          const queueArn = this.convertSqsUrlToArn(arnOrUrl) ?? arnOrUrl;
+          if (inventory.sqsQueuesByArn.has(queueArn)) {
+            const id = `${lambdaArn.arn}->${queueArn}`;
             edges.set(id, {
               from: lambdaArn.arn,
-              to: arn,
+              to: queueArn,
               relation: Relation.User,
               arrows: Arrows.None,
               dashes: true,
