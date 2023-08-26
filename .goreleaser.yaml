@@ -112,6 +112,7 @@ snapcrafts:
         plugs:
           - home
           - network
+          - network-bind
           - removable-media
           - dot-aws-config-credentials
     plugs:
