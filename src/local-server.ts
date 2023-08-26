@@ -21,7 +21,11 @@ export class LocalServer {
       if (err) throw err;
       this.context.info(`Local server started. Ctrl-C to stop. Access URL: ${this.url}`);
       if (doOpen) {
-        this.open();
+        try {
+          this.open();
+        } catch (error) {
+          this.context.info(`Failed to open browser: ${(error as Error).message}`);
+        }
       }
     });
   }
