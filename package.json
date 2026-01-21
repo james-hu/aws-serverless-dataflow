@@ -35,7 +35,7 @@
     "@types/matcher": "^2.0.0",
     "@types/ncp": "^2.0.5",
     "browserify": "^17.0.0",
-    "oclif": "^3.0.1",
+    "oclif": "^4.22.67",
     "pkg": "^5.8.0"
   },
   "engines": {
