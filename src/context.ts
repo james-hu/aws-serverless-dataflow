@@ -1,42 +1,50 @@
-import { APIGateway, ApiGatewayV2, CloudFormation, Lambda, S3, SNS, SQS } from 'aws-sdk/clients/all';
-import { ServiceConfigurationOptions } from 'aws-sdk/lib/service';
+import { DomainName, BasePathMapping, RestApi, Resource, Integration } from '@aws-sdk/client-api-gateway';
+import { Api, Route, Integration as IntegrationV2 } from '@aws-sdk/client-apigatewayv2';
+import { StackSummary, StackResourceSummary } from '@aws-sdk/client-cloudformation';
+import { FunctionConfiguration, EventSourceMappingConfiguration } from '@aws-sdk/client-lambda';
+import { Bucket, NotificationConfiguration } from '@aws-sdk/client-s3';
+import { Subscription } from '@aws-sdk/client-sns';
 import { CliUx } from '@oclif/core';
 import AwsServerlessDataflow = require('.');
 
-export type S3BucketDetails = S3.Bucket & {
+export type S3BucketDetails = Bucket & {
+
   bucketArn: string;
-  notificationConfiguration: S3.NotificationConfiguration;
+  notificationConfiguration: NotificationConfiguration;
   notifyLambdaFunctionArns: Set<string>;
   notifySqsQueueArns: Set<string>;
   notifySnsTopicArns: Set<string>;
 };
+
 type DynamoDbTableDetails = {
   arn: string;
   TableName: string;
 };
-type SnsTopicDetails = SNS.TopicAttributesMap & {
-  subscriptions: Array<Required<SNS.Subscription> & SNS.SubscriptionAttributesMap>;
+type SnsTopicDetails = Record<string, string> & {
+  subscriptions: Array<Required<Subscription> & Record<string, string>>;
   TopicArn: string;
 };
-type SqsQueueDetails = SQS.QueueAttributeMap & {
-  subscriptions: Array<Required<SNS.Subscription> & SNS.SubscriptionAttributesMap>;
+type SqsQueueDetails = Record<string, string> & {
+  subscriptions: Array<Required<Subscription> & Record<string, string>>;
   QueueUrl: string;
   QueueArn: string;
   RedrivePolicy: string;
 };
-export type ApiGatewayApiDetails = (APIGateway.RestApi|ApiGatewayV2.Api) & {
+
+export type ApiGatewayApiDetails = (RestApi | Api) & {
   lambdaFunctionArns: Set<string>;
-  routes: Array<(APIGateway.Resource|ApiGatewayV2.Route) & {
+  routes: Array<(Resource | Route) & {
     routeKey: string;
-    integrations: Array<(APIGateway.Integration|ApiGatewayV2.Integration) & { lambdaFunctionArn?: string }>;
+    integrations: Array<(Integration | IntegrationV2) & { lambdaFunctionArn?: string }>;
   }>;
 }
-type CloudFormationStackDetails = CloudFormation.StackSummary & {
-  resources: Array<CloudFormation.StackResourceSummary>;
+type CloudFormationStackDetails = StackSummary & {
+  resources: Array<StackResourceSummary>;
 }
 
 export class Context {
-  public awsOptions: Pick<ServiceConfigurationOptions, 'region'> = {};
+  public awsOptions: { region?: string } = {};
+
   public cliUx = CliUx.ux;
 
   constructor(public options: typeof AwsServerlessDataflow.Options, public reconstructedcommandLine: string,
@@ -47,26 +55,27 @@ export class Context {
   public inventory = {
     cfStackByName: new Map<string, CloudFormationStackDetails>(),
     cfStackById: new Map<string, CloudFormationStackDetails>(),
-    lambdaFunctionsByArn: new Map<string, Lambda.FunctionConfiguration & {
-      eventSourceMappings: Array<Lambda.EventSourceMappingConfiguration & {
+    lambdaFunctionsByArn: new Map<string, FunctionConfiguration & {
+      eventSourceMappings: Array<EventSourceMappingConfiguration & {
         sqsQueue?: SqsQueueDetails;
         snsTopic?: SnsTopicDetails;
         dynamoDbTable?: DynamoDbTableDetails;
       }>;
     }>(),
     snsTopicsByArn: new Map<string, SnsTopicDetails>(),
-    snsSubscriptionsByArn: new Map<string, Required<SNS.Subscription> & SNS.SubscriptionAttributesMap>(),
+    snsSubscriptionsByArn: new Map<string, Required<Subscription> & Record<string, string>>(),
     sqsQueuesByUrl: new Map<string, SqsQueueDetails>(),
     sqsQueuesByArn: new Map<string, SqsQueueDetails>(),
     s3BucketsByArn: new Map<string, S3BucketDetails>(),
     dynamoDbTablesByArn: new Map<string, DynamoDbTableDetails>(),
     apigApisById: new Map<string, ApiGatewayApiDetails>(),
-    apigDomainNamesByName: new Map<string, APIGateway.DomainName & {
-      basePathMappings: Array<APIGateway.BasePathMapping & {
+    apigDomainNamesByName: new Map<string, DomainName & {
+      basePathMappings: Array<BasePathMapping & {
         basePathUrl: string;
         domainAndBasePathUrl: string;
       }>;
     }>(),
+
   };
 
   info(message?: any, ...optionalParams: any[]): void {

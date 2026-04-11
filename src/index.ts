@@ -5,7 +5,6 @@ import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
 import { PromiseUtils } from '@handy-common-utils/promise-utils';
 import { CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
-
 class AwsServerlessDataflow extends Command {
   static Options: CommandOptions<typeof AwsServerlessDataflow>;  // just to hold the type
   static description = 'Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow\n' +
@@ -73,12 +72,15 @@ It generates website files locally and can optionally launch a local server for 
         break;
       } catch (error: any) {
         context.debug(error);
-        if (typeof error?.code === 'string' && error.code.startsWith('ExpiredToken')) {
+        const errorName = error.name || error.code || '';
+        if (typeof errorName === 'string' && (errorName.startsWith('ExpiredToken') || errorName === 'CredentialsError')) {
           context.info('Did you forget to log into AWS? Please log into your AWS account and try again.');
+
           context.info(`  ${error}`);
           break;
-        } else if (error.code === 'TooManyRequestsException') {
+        } else if (errorName === 'TooManyRequestsException' || errorName === 'ThrottlingException') {
           const previousParallelism = options.flags.parallelism;
+
           options.flags.parallelism = previousParallelism - 1;
           if (options.flags.parallelism >= -3) {
             context.info(`AWS is not able to handle too many requests at the same time. Restarting with parallelism changing from ${previousParallelism} to ${options.flags.parallelism} ...`);

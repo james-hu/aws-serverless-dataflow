@@ -231,7 +231,7 @@ export class Generator {
             node.stackName = stackName;
             stacks.set(stackIdArn, {
               id: stackIdArn,
-              label: stackName,
+              label: stackName ?? '',
               group: Group.CloudFormationStack,
             });
           }
