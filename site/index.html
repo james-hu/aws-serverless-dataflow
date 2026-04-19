@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AWS Serverless Dataflow</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script type="text/javascript" src="js/vis-network.min.js"></script>
     <script type="text/javascript" src="js/browser-utils.js"></script>
     <script type="text/javascript" src="base.js"></script>
@@ -26,7 +25,7 @@
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
@@ -351,8 +350,74 @@
             padding-left: 4rem !important;
         }
 
-        th.sort-asc::after { content: ' \2191'; font-size: 0.75rem; color: var(--primary-color); }
-        th.sort-desc::after { content: ' \2193'; font-size: 0.75rem; color: var(--primary-color); }
+        th.sort-asc::after {
+            content: ' \2191';
+            font-size: 0.75rem;
+            color: var(--primary-color);
+        }
+
+        th.sort-desc::after {
+            content: ' \2193';
+            font-size: 0.75rem;
+            color: var(--primary-color);
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: fixed;
+            z-index: 1000;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            min-width: 240px;
+            max-width: 400px;
+            font-size: 0.8125rem;
+            pointer-events: auto;
+        }
+
+        .context-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .context-menu-title {
+            font-weight: 700;
+            color: var(--text-main);
+            margin-right: 1rem;
+            word-break: break-all;
+        }
+
+        .context-menu-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .context-menu-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+
+        .context-menu-label {
+            font-size: 0.7rem;
+            font-weight: 900;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .context-menu-value {
+            color: var(--text-main);
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 
@@ -379,6 +444,8 @@
             </div>
             <div id="region-display" class="region-indicator">Region: -</div>
         </div>
+
+        <div id="node-context-menu" class="context-menu hidden"></div>
 
         <div id="topology-view" class="view-content active">
             <div id="serverless-network"></div>
@@ -502,6 +569,62 @@
         };
 
         var network = new vis.Network(document.getElementById("serverless-network"), { nodes: nodesView, edges: edgesView }, options);
+
+        const externalLinkIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+
+        network.on("oncontext", function (params) {
+            params.event.preventDefault();
+            const nodeId = network.getNodeAt(params.pointer.DOM);
+            const menu = document.getElementById('node-context-menu');
+
+            if (nodeId) {
+                const node = nodes.get(nodeId);
+                const type = node.group || 'Resource';
+                const name = node.label.replace(/^(topic|queue|bucket):\n/, '').replace(/\n/g, ' ');
+
+                const excludedKeys = ['RouteKey', 'RequestModels', 'routeKey'];
+                const detailsHtml = Object.entries(node.metadata || {})
+                    .filter(([k]) => !excludedKeys.includes(k))
+                    .map(([k, v]) => {
+                        let displayValue = v;
+                        if (k === 'LastModified' && type === 'LambdaFunction') displayValue = formatTimestamp(v);
+                        return `<div class="context-menu-item"><div class="context-menu-label">${k}</div><div class="context-menu-value">${displayValue}</div></div>`;
+                    }).join('');
+
+                const consoleLink = node.consoleUrl ? `<a href="${node.consoleUrl}" target="_blank" class="console-link" title="Open in AWS Console">${externalLinkIcon}</a>` : '';
+
+                menu.innerHTML = `
+                    <div class="context-menu-header">
+                        <div class="context-menu-title">${name}</div>
+                        ${consoleLink}
+                    </div>
+                    <div class="context-menu-details">
+                        <div class="context-menu-item"><div class="context-menu-label">TYPE</div><div class="context-menu-value">${type}</div></div>
+                        ${node.stackName ? `<div class="context-menu-item"><div class="context-menu-label">STACK</div><div class="context-menu-value">${node.stackName}</div></div>` : ''}
+                        ${detailsHtml}
+                    </div>
+                `;
+
+                menu.classList.remove('hidden');
+
+                // Position adjustment
+                const x = params.event.clientX;
+                const y = params.event.clientY;
+                const menuWidth = 240;
+                const menuHeight = menu.offsetHeight;
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+
+                menu.style.left = (x + menuWidth > windowWidth ? x - menuWidth : x) + 'px';
+                menu.style.top = (y + menuHeight > windowHeight ? y - menuHeight : y) + 'px';
+            } else {
+                menu.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('click', () => document.getElementById('node-context-menu').classList.add('hidden'));
+        network.on("dragStart", () => document.getElementById('node-context-menu').classList.add('hidden'));
+        network.on("zoom", () => document.getElementById('node-context-menu').classList.add('hidden'));
 
         document.getElementById('disablePhysics').addEventListener("change", e => network.setOptions({ physics: !e.target.checked }));
         if (typeof cfStackClusters === 'undefined' || cfStackClusters.length === 0) document.getElementById('clusterControl').classList.add('hidden');
