@@ -15,6 +15,8 @@ interface Node {
   group?: Group;
   stackId?: string;
   stackName?: string;
+  consoleUrl?: string;
+  metadata?: any;
   [others: string]: any;
 }
 
@@ -95,11 +97,13 @@ export class Generator {
       fs.writeFile(path.join(destDir, 'base.js'), `
         var reconstructedCommandLine = '${jsStringEscape(this.context.reconstructedcommandLine)}';
         var generatedTimestamp = '${new Date().toISOString()}';
+        var awsRegion = '${this.context.awsOptions.region}';
       `),
       fs.writeFile(path.join(destDir, 'nodes.js'), 'var nodesArray = ' + JSON.stringify([...nodes.values()], undefined, 2)),
       fs.writeFile(path.join(destDir, 'edges.js'), 'var edgesArray = ' + JSON.stringify([...edges.values()], undefined, 2)),
       fs.writeFile(path.join(destDir, 'clusters.js'), 'var cfStackClusters = ' + JSON.stringify([...cfStackClusters.values()], undefined, 2)),
     ]);
+
     await fsCopy(srcVisNetworkJsFile, destVisNetworkJsFile);
 
     this.context.cliUx.action.stop();
@@ -116,6 +120,11 @@ export class Generator {
         id: topicArn.arn,
         label: `topic:\n${topicArn.resource}`,
         group: Group.SnsTopic,
+        consoleUrl: this.generateConsoleUrl(Group.SnsTopic, topicArn.arn, topicArn.resource),
+        metadata: {
+          DisplayName: topic.DisplayName,
+          SubscriptionsConfirmed: topic.SubscriptionsConfirmed,
+        },
       });
     }
 
@@ -126,6 +135,12 @@ export class Generator {
         id: queueArn.arn,
         label: `queue:\n${queueArn.resource}`,
         group: Group.SqsQueue,
+        consoleUrl: this.generateConsoleUrl(Group.SqsQueue, queueArn.arn, queueArn.resource),
+        metadata: {
+          QueueUrl: queue.QueueUrl,
+          DelaySeconds: queue.DelaySeconds,
+          MaximumMessageSize: queue.MaximumMessageSize,
+        },
       });
     }
 
@@ -136,6 +151,13 @@ export class Generator {
         id: lambdaArn.arn,
         label: `${lambdaArn.resourceId}`,
         group: Group.LambdaFunction,
+        consoleUrl: this.generateConsoleUrl(Group.LambdaFunction, lambdaArn.arn, lambdaArn.resourceId),
+        metadata: {
+          Runtime: lambda.Runtime,
+          Handler: lambda.Handler,
+          MemorySize: lambda.MemorySize,
+          LastModified: lambda.LastModified,
+        },
       });
     }
 
@@ -176,6 +198,11 @@ export class Generator {
           id: bucket.bucketArn,
           label: `bucket:\n${bucket.Name}`,
           group: Group.S3Bucket,
+          consoleUrl: this.generateConsoleUrl(Group.S3Bucket, bucket.bucketArn, bucket.Name),
+          metadata: {
+            Name: bucket.Name,
+            CreationDate: bucket.CreationDate,
+          },
         });
       }
     }
@@ -186,10 +213,41 @@ export class Generator {
         id: table.arn,
         label: `DynamoDB table:\n${table.TableName}`,
         group: Group.DynamoDbTable,
+        consoleUrl: this.generateConsoleUrl(Group.DynamoDbTable, table.arn, table.TableName),
+        metadata: {
+          TableName: table.TableName,
+        },
       });
     }
 
     return nodes;
+  }
+
+  generateConsoleUrl(group: Group, arn: string, resourceId?: string): string | undefined {
+    const region = this.context.awsOptions.region;
+    switch (group) {
+      case Group.LambdaFunction: {
+        return `https://${region}.console.aws.amazon.com/lambda/home?region=${region}#/functions/${resourceId}?tab=code`;
+      }
+      case Group.SnsTopic: {
+        return `https://${region}.console.aws.amazon.com/sns/v3/home?region=${region}#/topic/${arn}`;
+      }
+      case Group.SqsQueue: {
+        return `https://${region}.console.aws.amazon.com/sqs/v2/home?region=${region}#/queues`;
+      }
+      case Group.S3Bucket: {
+        return `https://s3.console.aws.amazon.com/s3/buckets/${resourceId}?region=${region}`;
+      }
+      case Group.DynamoDbTable: {
+        return `https://${region}.console.aws.amazon.com/dynamodbv2/home?region=${region}#tables:selected=${resourceId};tab=overview`;
+      }
+      case Group.DomainName: {
+        return `https://${region}.console.aws.amazon.com/apigateway/main/publish/domain-names?region=${region}`;
+      }
+      default: {
+        return undefined;
+      }
+    }
   }
 
   generateCloudFormationStackClusters(nodes: Map<string, Node>): Map<string, Node> {

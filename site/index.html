@@ -1,314 +1,296 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AWS Serverless Dataflow</title>
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script type="text/javascript" src="js/vis-network.min.js"></script>
     <script type="text/javascript" src="js/browser-utils.js"></script>
-
     <script type="text/javascript" src="base.js"></script>
     <script type="text/javascript" src="nodes.js"></script>
     <script type="text/javascript" src="edges.js"></script>
     <script type="text/javascript" src="clusters.js"></script>
 
     <style type="text/css">
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            z-index: 10;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .header-title p {
+            margin: 0;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .search-area {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            flex-grow: 1;
+            box-shadow: var(--shadow);
+        }
+
         #serverless-network {
-            width: -webkit-calc(100% - 10px);
-            width:    -moz-calc(100% - 10px);
-            width:         calc(100% - 10px);
-            height: 800px;
-            border: 1px solid lightgray;
+            flex-grow: 1;
+            min-height: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
         }
-        #command-line {
-            margin-top: 10px;
-            font-size: small;
+
+        .controls-panel {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            max-width: 250px;
+            z-index: 5;
         }
+
+        .control-group {
+            margin-bottom: 0.625rem;
+        }
+
+        .control-group label {
+            display: flex;
+            align-items: center;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .control-group input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+
+        footer {
+            padding: 0.5rem 2rem;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .badge-cf {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .hidden { display: none; }
     </style>
 </head>
-
 <body>
-    <div style="display: flex; align-items: center;">
-        <div style="flex-grow: 1;">
-            <h2 style="text-align: center; margin-bottom: 0.2em">AWS Serverless Dataflow Diagram</h2>
-            <p style="margin-right: 20%; margin-bottom: 2.5em; text-align: right; font-size: x-small;">
-                generated by <a href="https://github.com/james-hu/aws-serverless-dataflow">aws-serverless-dataflow</a>
-            </p>
-            <p>
-                Show only: <input id="includePatterns" type="text" placeholder="example: *james*"/>
-                &nbsp; &nbsp; &nbsp;
-                Hide: <input id="excludePatterns" type="text" placeholder="example: dev-*,*-test"/>
-            </p>
+    <header>
+        <div class="header-title">
+            <h1>AWS Serverless Dataflow Diagram</h1>
+            <p>generated by <a href="https://github.com/james-hu/aws-serverless-dataflow">aws-serverless-dataflow</a></p>
         </div>
-        <div>
-            <div>
-                <label>
-                  <input type="checkbox" id="disablePhysics" name="disablePhysics" value="disablePhysics" />
-                  Disable auto-positioning
-                </label>
+    </header>
+
+    <main>
+        <div class="search-area">
+            <input id="includePatterns" type="text" placeholder="Show only: (e.g. *james*)"/>
+            <input id="excludePatterns" type="text" placeholder="Hide: (e.g. dev-*, *-test)"/>
+        </div>
+        
+        <div id="serverless-network"></div>
+
+        <div class="controls-panel">
+            <div class="control-group">
+                <label><input type="checkbox" id="disablePhysics" /> Disable auto-positioning</label>
             </div>
-            <div>
-                <!-- space -->
+            <div class="control-group">
+                <label><input type="checkbox" id="hideOrphan" checked /> Hide orphan resources</label>
             </div>
-            <div>
-                <label>
-                  <input type="checkbox" id="hideOrphan" name="hideOrphan" value="hideOrphan" checked />
-                  Hide orphan resources
-                </label>
+            <div class="control-group">
+                <label><input type="checkbox" id="hideApiGateway" /> Hide API Gateway resources</label>
             </div>
-            <div>
-                <label>
-                  <input type="checkbox" id="hideApiGateway" name="hideApiGateway" value="hideApiGateway" />
-                  Hide API Gateway resources
-                </label>
+            <div class="control-group">
+                <label><input type="checkbox" id="hideMessaging" /> Hide messaging resources</label>
             </div>
-            <div>
-                <label>
-                  <input type="checkbox" id="hideMessaging" name="hideMessaging" value="hideMessaging" />
-                  Hide messaging resources
-                </label>
+            <div class="control-group">
+                <label><input type="checkbox" id="hideDLQ" /> Hide DLQs in SQS</label>
             </div>
-            <div>
-                <label>
-                  <input type="checkbox" id="hideDLQ" name="hideDLQ" value="hideDLQ" />
-                  Hide DLQs in SQS
-                </label>
-            </div>
-            <div>
-                <label>
-                  <input type="checkbox" id="clusterByCfStacks" name="clusterByCfStacks" value="clusterByCfStacks" />
-                  Collapse into CloudFormation stacks
-                </label>
+            <div class="control-group" id="clusterControl">
+                <label><input type="checkbox" id="clusterByCfStacks" /> Collapse into CF stacks</label>
             </div>
         </div>
-    </div>
-    <div id="serverless-network"></div>
-    <div id="command-line">Generated at <span id="generatedTimestamp"></span> by command line: <code id="reconstructed-command-line"></code></div>
+    </main>
+
+    <footer>
+        <div>Generated at <span id="generatedTimestamp"></span></div>
+        <div>Command: <code id="reconstructed-command-line"></code></div>
+    </footer>
 
     <script type="text/javascript">
-        document.getElementById('generatedTimestamp').innerHTML = generatedTimestamp;
-        document.getElementById('reconstructed-command-line').innerHTML = reconstructedCommandLine;
+        // Data Initialization
+        try {
+            document.getElementById('generatedTimestamp').innerHTML = new Date(generatedTimestamp).toLocaleString();
+            document.getElementById('reconstructed-command-line').innerHTML = reconstructedCommandLine;
+        } catch (e) { console.error('Error init:', e); }
 
         var disablePhysics = false;
-
         var hideOrphan = true;
         var hideDLQ = false;
         var hideApiGateway = false;
         var hideMessaging = false;
 
-        var includePatternsPreviousValue = '';
-        var includePatternsCurrentValue = '';
-        var excludePatternsPreviousValue = '';
-        var excludePatternsCurrentValue = '';
-
-        window.shouldInclude = function (text) {return true};   // this function will be dynamically updated
+        window.shouldInclude = function (text) {return true};
 
         function shouldHideNodeDisregardingEdges(node) {
-            if (hideApiGateway && (node.group === 'DomainName' || node.group === 'BasePath')) {
-                return true;
-            }
-            if (hideMessaging && (node.group === 'SnsTopic' || node.group === 'SqsQueue')) {
-                return true;
-            }
+            if (hideApiGateway && (node.group === 'DomainName' || node.group === 'BasePath')) return true;
+            if (hideMessaging && (node.group === 'SnsTopic' || node.group === 'SqsQueue')) return true;
             return !window.shouldInclude(node.id);
         }
 
         var nodes = new vis.DataSet(nodesArray);
         var edges = new vis.DataSet(edgesArray);
-
         var edgesView = new vis.DataView(edges);
         var nodesView = new vis.DataView(nodes, {
             filter: function(node) {
-                if (shouldHideNodeDisregardingEdges(node)) {
-                    return false;
-                }
-
-                var nodeEdges;
+                if (shouldHideNodeDisregardingEdges(node)) return false;
+                var nodeEdges = [];
                 if (hideOrphan || hideDLQ) {
-                    nodeEdges = edgesView.get({
-                        filter: function(edge) {
-                            return edge.to === node.id || edge.from === node.id;
-                        }
-                    });
+                    nodeEdges = edgesView.get({ filter: e => e.to === node.id || e.from === node.id });
                 }
                 if (hideOrphan) {
-                    var numNonHiddenEdges = 0;
-                    for (var edge of nodeEdges) {
-                        var otherNodeId = edge.to === node.id ? edge.from : edge.to;
-                        var otherNode = nodes.get(otherNodeId);
-                        if (otherNode && !shouldHideNodeDisregardingEdges(otherNode)) {
-                            numNonHiddenEdges ++;
-                        }
-                    }
-                    if (numNonHiddenEdges === 0) {
-                        return false;
-                    }
+                    if (nodeEdges.filter(e => {
+                        var other = e.to === node.id ? e.from : e.to;
+                        var otherNode = nodes.get(other);
+                        return otherNode && !shouldHideNodeDisregardingEdges(otherNode);
+                    }).length === 0) return false;
                 }
                 if (hideDLQ && node.group === 'SqsQueue') {
-                    var isDLQ = false;
-                    var numEnabledNonDlqEdges = 0;
-                    for (var edge of nodeEdges) {
-                        if (edge.relation === 'DLQ' && edge.from === node.id) {
-                            isDLQ = true;
-                        } else if (edge.stateIsEnabled !== false) {
-                            numEnabledNonDlqEdges ++;
-                        }
-                    }
-                    if (isDLQ && numEnabledNonDlqEdges < 1) {    // only play a DLQ role, no other enabled usage
-                        return false;
-                    }
+                    var isDLQ = nodeEdges.some(e => e.relation === 'DLQ' && e.from === node.id);
+                    var numEnabledNonDlqEdges = nodeEdges.filter(e => e.relation !== 'DLQ' && e.stateIsEnabled !== false).length;
+                    if (isDLQ && numEnabledNonDlqEdges < 1) return false;
                 }
                 return true;
             }
         });
-        var container = document.getElementById("serverless-network");
-        var data = {
-            nodes: nodesView,
-            edges: edgesView,
-        };
+
         var options = {
-            
-            configure: {
-                enabled: false,
-                filter: 'physics, layout, nodes, edges, network',
-                showButton: true
-            },
             physics: {
-                barnesHut: {
-                    gravitationalConstant: -4750,
-                    centralGravity: 0.07,
-                    damping: 0.65,
-                    springLength: 130,
-                    avoidOverlap: 0.65,
-                },
+                barnesHut: { gravitationalConstant: -4750, centralGravity: 0.07, damping: 0.65, springLength: 130, avoidOverlap: 1 }
             },
             nodes: {
                 shape: 'circularImage',
                 imagePadding: 10,
                 shadow: true,
-                color: {border: '#f2f2f2'},
+                color: { border: '#f2f2f2' }
             },
             groups: {
-                SnsTopic: {
-                    image: 'img/SNS_Topic.svg',
-                    color:{background:'#d6dfff'},
-                    size: 30
-                },
-                SqsQueue: {
-                    image: 'img/SQS_Queue.svg',
-                    color:{background:'#cff7b5'}
-                },
-                S3Bucket: {
-                    image: 'img/S3_Bucket.svg',
-                    color:{background:'#c7f4fc'},
-                },
-                DynamoDbTable: {
-                    image: 'img/DynamoDB_Table.svg',
-                    color:{background:'#fcc5f9'},
-                },
-                LambdaFunction: {
-                    image: 'img/Lambda_Function.svg',
-                    color:{background:'#f7e5c6'},
-                    size: 35,
-                },
-                DomainName: {
-                    shape: 'ellipse',
-                    color:{background:'#e9c4f5'}
-                },
-                BasePath: {
-                    shape: 'box',
-                    color:{background:'#eed7f5'}
-                },
-                Route: {
-                    shape: 'box',
-                    color:{background:'#e0dff0'}
-                },
-                CfStack: {
-                    // image: 'img/CloudFormation_Stack.svg',
-                    shape: 'box',
-                    margin: 12,
-                    color:{
-                        background:'#7cbbff',
-                    },
-                    size: 40,
-                    font: {
-                        size: 18,
-                    }
-                },
+                SnsTopic: { image: 'img/SNS_Topic.svg', color:{background:'#dee2ff'} },
+                SqsQueue: { image: 'img/SQS_Queue.svg', color:{background:'#e2fce0'} },
+                S3Bucket: { image: 'img/S3_Bucket.svg', color:{background:'#e0f7ff'} },
+                DynamoDbTable: { image: 'img/DynamoDB_Table.svg', color:{background:'#ffe0fc'} },
+                LambdaFunction: { image: 'img/Lambda_Function.svg', color:{background:'#fff2df'}, size: 35 },
+                DomainName: { shape: 'ellipse', color:{background:'#f8e0ff'} },
+                BasePath: { shape: 'box', color:{background:'#fbe8ff'} },
+                Route: { shape: 'box', color:{background:'#f0f0ff'} },
+                CfStack: { shape: 'box', margin: 12, color:{background:'#7cbbff'}, size: 40, font: {size: 16} }
             },
             edges: {
-                color: {
-                    inherit: false,
-                    color: '#363680',
-                    highlight: '#1e66d4',
-                    hover: '#1e66d4'
-                },
-                smooth: {
-                    type: 'continuous'
-                }
+                color: { inherit: false, color: '#64748b' },
+                smooth: { type: 'continuous' }
             }
         };
-        var network = new vis.Network(container, data, options);
 
-        document.getElementById('disablePhysics').addEventListener("change", function(e) {
-            network.setOptions( { physics: !e.target.checked } );
+        var network = new vis.Network(document.getElementById("serverless-network"), { nodes: nodesView, edges: edgesView }, options);
+
+        document.getElementById('disablePhysics').addEventListener("change", e => network.setOptions({ physics: !e.target.checked }));
+        if (cfStackClusters.length === 0) document.getElementById('clusterControl').classList.add('hidden');
+        
+        document.getElementById('clusterByCfStacks').addEventListener("change", e => {
+            cfStackClusters.forEach(stack => {
+                if (e.target.checked) network.cluster({ joinCondition: c => c.stackId === stack.id, clusterNodeProperties: { id: stack.id, label: stack.label, group: stack.group } });
+                else if (network.isCluster(stack.id)) network.openCluster(stack.id);
+            });
         });
 
-        if (cfStackClusters.length === 0) {
-            document.getElementById('clusterByCfStacks').parentElement.style.display = 'none';
-        }
-        document.getElementById('clusterByCfStacks').addEventListener("change", function(e) {
-            var clusterOptionsByData;
-            for (var i = 0; i < cfStackClusters.length; i++) {
-                var stack = cfStackClusters[i];
-                if (e.target.checked) {
-                    clusterOptionsByData = {
-                        joinCondition: function (childOptions) {
-                            return childOptions.stackId === stack.id;
-                        },
-                        clusterNodeProperties: {
-                            allowSingleNodeCluster: true,
-                            id: stack.id,
-                            label: stack.label,
-                            group: stack.group,
-                        },
-                    };
-                    network.cluster(clusterOptionsByData);
-                } else {
-                    if (network.isCluster(stack.id)) {
-                        network.openCluster(stack.id);
-                    }
-                }
-            }
-        });
-
-        for (var id of ['hideOrphan', 'hideDLQ', 'hideApiGateway', 'hideMessaging']) {
-            document.getElementById(id).addEventListener("change", function(e) {
-                window[this] = e.target.checked;
+        ['hideOrphan', 'hideDLQ', 'hideApiGateway', 'hideMessaging'].forEach(id => {
+            document.getElementById(id).addEventListener("change", e => {
+                window[id] = e.target.checked;
                 nodesView.refresh();
                 network.fit();
-            }.bind(id));
-        }
-
-        for (var id of ['includePatterns', 'excludePatterns']) {
-            document.getElementById(id).addEventListener("focus", function(e) {
-                window[this + 'PreviousValue'] = e.target.value;
-            }.bind(id));
-            document.getElementById(id).addEventListener("blur", function(e) {
-                window[this + 'CurrentValue'] = e.target.value;
-                if (includePatternsCurrentValue !== includePatternsPreviousValue || excludePatternsCurrentValue != excludePatternsPreviousValue) {
-                    window.shouldInclude = buildIncludeExcludeMatcher(includePatternsCurrentValue.split(/[, ]+/), excludePatternsCurrentValue.split(/[, ]+/));
-                    nodesView.refresh();
-                    network.fit();
-                }
-            }.bind(id));
-            document.getElementById(id).addEventListener("keyup", function(e) {
-                if (event.key === "Enter") {
-                    e.target.blur();
-                }
             });
-        }
+        });
+
+        ['includePatterns', 'excludePatterns'].forEach(id => {
+            document.getElementById(id).addEventListener("blur", e => {
+                window.shouldInclude = buildIncludeExcludeMatcher(document.getElementById('includePatterns').value.split(/[, ]+/), document.getElementById('excludePatterns').value.split(/[, ]+/));
+                nodesView.refresh();
+                network.fit();
+            });
+            document.getElementById(id).addEventListener("keyup", e => {
+                if (e.key === "Enter") e.target.blur();
+            });
+        });
     </script>
 </body>
-
 </html>
