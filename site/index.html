@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,43 +142,278 @@
             font-weight: 500;
         }
 
-        .hidden { display: none; }
+        .hidden {
+            display: none;
+        }
+
+        .view-tabs-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .view-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: #e2e8f0;
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 0.375rem;
+            border: none;
+            background: none;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: var(--shadow);
+        }
+
+        .region-indicator {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .region-indicator::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+        }
+
+        .view-content {
+            display: none;
+            flex-grow: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        .view-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-container {
+            flex-grow: 1;
+            overflow: auto;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8125rem;
+            table-layout: fixed;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 2px solid var(--border-color);
+            cursor: pointer;
+            user-select: none;
+            z-index: 2;
+        }
+
+        th:hover {
+            background: #f1f5f9;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .type-badge {
+            padding: 0.125rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .group-LambdaFunction {
+            background: #fff2df;
+            color: #92400e;
+        }
+
+        .group-SnsTopic {
+            background: #dee2ff;
+            color: #3730a3;
+        }
+
+        .group-SqsQueue {
+            background: #e2fce0;
+            color: #166534;
+        }
+
+        .group-S3Bucket {
+            background: #e0f7ff;
+            color: #075985;
+        }
+
+        .group-DynamoDbTable {
+            background: #ffe0fc;
+            color: #86198f;
+        }
+
+        .group-DomainName {
+            background: #f8e0ff;
+            color: #6b21a8;
+        }
+
+        .group-BasePath {
+            background: #f1f5f9;
+            color: var(--text-muted);
+        }
+
+        .group-Route {
+            background: #f1f5f9;
+            color: var(--text-muted);
+        }
+
+        .details-cell {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .detail-item {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .resource-id {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .console-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .console-link:hover {
+            color: var(--primary-color);
+        }
+
+        .indent-1 {
+            padding-left: 2rem !important;
+        }
+
+        .indent-2 {
+            padding-left: 4rem !important;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <div class="header-title">
             <h1>AWS Serverless Dataflow Diagram</h1>
-            <p>generated by <a href="https://github.com/james-hu/aws-serverless-dataflow">aws-serverless-dataflow</a></p>
+            <p>generated by <a href="https://github.com/james-hu/aws-serverless-dataflow">aws-serverless-dataflow</a>
+            </p>
         </div>
     </header>
 
     <main>
         <div class="search-area">
-            <input id="includePatterns" type="text" placeholder="Show only: (e.g. *james*)"/>
-            <input id="excludePatterns" type="text" placeholder="Hide: (e.g. dev-*, *-test)"/>
+            <input id="includePatterns" type="text" placeholder="Show only: (e.g. *james*)" />
+            <input id="excludePatterns" type="text" placeholder="Hide: (e.g. dev-*, *-test)" />
         </div>
-        
-        <div id="serverless-network"></div>
 
-        <div class="controls-panel">
-            <div class="control-group">
-                <label><input type="checkbox" id="disablePhysics" /> Disable auto-positioning</label>
+        <div class="view-tabs-container">
+            <div class="view-tabs">
+                <button id="tab-topology" class="tab-btn active" onclick="switchView('topology')">Topology
+                    Diagram</button>
+                <button id="tab-inventory" class="tab-btn" onclick="switchView('inventory')">Resource Inventory</button>
             </div>
-            <div class="control-group">
-                <label><input type="checkbox" id="hideOrphan" checked /> Hide orphan resources</label>
+            <div id="region-display" class="region-indicator">Region: -</div>
+        </div>
+
+        <div id="topology-view" class="view-content active">
+            <div id="serverless-network"></div>
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label><input type="checkbox" id="disablePhysics" /> Disable auto-positioning</label>
+                </div>
+                <div class="control-group">
+                    <label><input type="checkbox" id="hideOrphan" checked /> Hide orphan resources</label>
+                </div>
+                <div class="control-group">
+                    <label><input type="checkbox" id="hideApiGateway" /> Hide API Gateway resources</label>
+                </div>
+                <div class="control-group">
+                    <label><input type="checkbox" id="hideMessaging" /> Hide messaging resources</label>
+                </div>
+                <div class="control-group">
+                    <label><input type="checkbox" id="hideDLQ" /> Hide DLQs in SQS</label>
+                </div>
+                <div class="control-group" id="clusterControl">
+                    <label><input type="checkbox" id="clusterByCfStacks" /> Collapse into CF stacks</label>
+                </div>
             </div>
-            <div class="control-group">
-                <label><input type="checkbox" id="hideApiGateway" /> Hide API Gateway resources</label>
-            </div>
-            <div class="control-group">
-                <label><input type="checkbox" id="hideMessaging" /> Hide messaging resources</label>
-            </div>
-            <div class="control-group">
-                <label><input type="checkbox" id="hideDLQ" /> Hide DLQs in SQS</label>
-            </div>
-            <div class="control-group" id="clusterControl">
-                <label><input type="checkbox" id="clusterByCfStacks" /> Collapse into CF stacks</label>
+        </div>
+
+        <div id="inventory-view" class="view-content">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 10%" onclick="sortTable(0)">Type</th>
+                            <th style="width: 35%" onclick="sortTable(1)">Name</th>
+                            <th style="width: 15%" onclick="sortTable(2)">Stack</th>
+                            <th style="width: 40%" onclick="sortTable(3)">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resourceTableBody"></tbody>
+                </table>
             </div>
         </div>
     </main>
@@ -192,6 +428,7 @@
         try {
             document.getElementById('generatedTimestamp').innerHTML = new Date(generatedTimestamp).toLocaleString();
             document.getElementById('reconstructed-command-line').innerHTML = reconstructedCommandLine;
+            if (typeof awsRegion !== 'undefined') document.getElementById('region-display').innerHTML = 'Region: ' + awsRegion;
         } catch (e) { console.error('Error init:', e); }
 
         var disablePhysics = false;
@@ -200,7 +437,7 @@
         var hideApiGateway = false;
         var hideMessaging = false;
 
-        window.shouldInclude = function (text) {return true};
+        window.shouldInclude = function (text) { return true };
 
         function shouldHideNodeDisregardingEdges(node) {
             if (hideApiGateway && (node.group === 'DomainName' || node.group === 'BasePath')) return true;
@@ -212,7 +449,7 @@
         var edges = new vis.DataSet(edgesArray);
         var edgesView = new vis.DataView(edges);
         var nodesView = new vis.DataView(nodes, {
-            filter: function(node) {
+            filter: function (node) {
                 if (shouldHideNodeDisregardingEdges(node)) return false;
                 var nodeEdges = [];
                 if (hideOrphan || hideDLQ) {
@@ -245,15 +482,15 @@
                 color: { border: '#f2f2f2' }
             },
             groups: {
-                SnsTopic: { image: 'img/SNS_Topic.svg', color:{background:'#dee2ff'} },
-                SqsQueue: { image: 'img/SQS_Queue.svg', color:{background:'#e2fce0'} },
-                S3Bucket: { image: 'img/S3_Bucket.svg', color:{background:'#e0f7ff'} },
-                DynamoDbTable: { image: 'img/DynamoDB_Table.svg', color:{background:'#ffe0fc'} },
-                LambdaFunction: { image: 'img/Lambda_Function.svg', color:{background:'#fff2df'}, size: 35 },
-                DomainName: { shape: 'ellipse', color:{background:'#f8e0ff'} },
-                BasePath: { shape: 'box', color:{background:'#fbe8ff'} },
-                Route: { shape: 'box', color:{background:'#f0f0ff'} },
-                CfStack: { shape: 'box', margin: 12, color:{background:'#7cbbff'}, size: 40, font: {size: 16} }
+                SnsTopic: { image: 'img/SNS_Topic.svg', color: { background: '#dee2ff' } },
+                SqsQueue: { image: 'img/SQS_Queue.svg', color: { background: '#e2fce0' } },
+                S3Bucket: { image: 'img/S3_Bucket.svg', color: { background: '#e0f7ff' } },
+                DynamoDbTable: { image: 'img/DynamoDB_Table.svg', color: { background: '#ffe0fc' } },
+                LambdaFunction: { image: 'img/Lambda_Function.svg', color: { background: '#fff2df' }, size: 35 },
+                DomainName: { shape: 'ellipse', color: { background: '#f8e0ff' } },
+                BasePath: { shape: 'box', color: { background: '#fbe8ff' } },
+                Route: { shape: 'box', color: { background: '#f0f0ff' } },
+                CfStack: { shape: 'box', margin: 12, color: { background: '#7cbbff' }, size: 40, font: { size: 16 } }
             },
             edges: {
                 color: { inherit: false, color: '#64748b' },
@@ -264,8 +501,8 @@
         var network = new vis.Network(document.getElementById("serverless-network"), { nodes: nodesView, edges: edgesView }, options);
 
         document.getElementById('disablePhysics').addEventListener("change", e => network.setOptions({ physics: !e.target.checked }));
-        if (cfStackClusters.length === 0) document.getElementById('clusterControl').classList.add('hidden');
-        
+        if (typeof cfStackClusters === 'undefined' || cfStackClusters.length === 0) document.getElementById('clusterControl').classList.add('hidden');
+
         document.getElementById('clusterByCfStacks').addEventListener("change", e => {
             cfStackClusters.forEach(stack => {
                 if (e.target.checked) network.cluster({ joinCondition: c => c.stackId === stack.id, clusterNodeProperties: { id: stack.id, label: stack.label, group: stack.group } });
@@ -278,6 +515,7 @@
                 window[id] = e.target.checked;
                 nodesView.refresh();
                 network.fit();
+                renderTable();
             });
         });
 
@@ -286,11 +524,102 @@
                 window.shouldInclude = buildIncludeExcludeMatcher(document.getElementById('includePatterns').value.split(/[, ]+/), document.getElementById('excludePatterns').value.split(/[, ]+/));
                 nodesView.refresh();
                 network.fit();
+                renderTable();
             });
             document.getElementById(id).addEventListener("keyup", e => {
                 if (e.key === "Enter") e.target.blur();
             });
         });
+
+        // View Switching & Table Logic
+        var currentView = 'topology';
+        var sortColumn = -1;
+        var sortAsc = true;
+
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.view-content').forEach(content => content.classList.remove('active'));
+
+            if (view === 'topology') {
+                document.getElementById('tab-topology').classList.add('active');
+                document.getElementById('topology-view').classList.add('active');
+                network.fit();
+            } else {
+                document.getElementById('tab-inventory').classList.add('active');
+                document.getElementById('inventory-view').classList.add('active');
+                renderTable();
+            }
+        }
+
+        function sortTable(n) {
+            if (sortColumn === n) sortAsc = !sortAsc;
+            else { sortColumn = n; sortAsc = true; }
+            renderTable();
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return '-';
+            try {
+                const date = new Date(ts);
+                return isNaN(date.getTime()) ? ts : date.toLocaleString();
+            } catch (e) {
+                return ts;
+            }
+        }
+
+        function renderTable() {
+            const body = document.getElementById('resourceTableBody');
+            if (!body) return;
+            const filteredNodes = nodesView.get();
+
+            if (sortColumn >= 0) {
+                filteredNodes.sort((a, b) => {
+                    let valA, valB;
+                    switch (sortColumn) {
+                        case 0: valA = a.group || ''; valB = b.group || ''; break;
+                        case 1: valA = a.label; valB = b.label; break;
+                        case 2: valA = a.stackName || ''; valB = b.stackName || ''; break;
+                        case 3: valA = JSON.stringify(a.metadata || {}); valB = JSON.stringify(b.metadata || {}); break;
+                    }
+                    if (valA < valB) return sortAsc ? -1 : 1;
+                    if (valA > valB) return sortAsc ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            const externalLinkIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+
+            body.innerHTML = filteredNodes.map(node => {
+                const type = node.group || 'Resource';
+                const name = node.label.replace(/^(topic|queue|bucket):\n/, '').replace(/\n/g, ' ');
+                const stack = node.stackName || '';
+
+                const excludedKeys = ['RouteKey', 'RequestModels', 'routeKey'];
+                const details = Object.entries(node.metadata || {})
+                    .filter(([k]) => !excludedKeys.includes(k))
+                    .map(([k, v]) => {
+                        let displayValue = v;
+                        if (k === 'LastModified' && type === 'LambdaFunction') {
+                            displayValue = formatTimestamp(v);
+                        }
+                        return `<span class="detail-item"><strong>${k}:</strong> ${displayValue}</span>`;
+                    }).join(' ');
+                const consoleLink = node.consoleUrl ? `<a href="${node.consoleUrl}" target="_blank" class="console-link" title="Open in AWS Console">${externalLinkIcon}</a>` : '';
+
+                let indentClass = '';
+                if (node.group === 'BasePath') indentClass = 'indent-1';
+                else if (node.group === 'Route') indentClass = 'indent-2';
+
+                return `<tr>
+                    <td><span class="type-badge group-${type}">${type}</span></td>
+                    <td class="resource-id ${indentClass}" title="${node.id}">${name}</td>
+                    <td>${stack}</td>
+                    <td><div class="details-cell">${details} ${consoleLink}</div></td>
+                </tr>`;
+            }).join('');
+        }
     </script>
 </body>
+
 </html>

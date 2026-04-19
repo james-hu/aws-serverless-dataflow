@@ -124,6 +124,7 @@ export class Generator {
         metadata: {
           DisplayName: topic.DisplayName,
           SubscriptionsConfirmed: topic.SubscriptionsConfirmed,
+          SubscriptionsPending: topic.SubscriptionsPending,
         },
       });
     }
@@ -155,6 +156,7 @@ export class Generator {
         metadata: {
           Runtime: lambda.Runtime,
           Handler: lambda.Handler,
+          Timeout: lambda.Timeout,
           MemorySize: lambda.MemorySize,
           LastModified: lambda.LastModified,
         },
@@ -168,23 +170,38 @@ export class Generator {
         id: domainName,
         label: domainName,
         group: Group.DomainName,
+        consoleUrl: this.generateConsoleUrl(Group.DomainName, domainName),
+        metadata: {
+          securityPolicy: domain.securityPolicy,
+          certificateArn: domain.certificateArn,
+        },
       });
       for (const mapping of domain.basePathMappings) {
-        const basePathUrl = `/${mapping.basePathUrl}`;
+        const basePathUrl = mapping.basePathUrl === '' ? '(none)' : mapping.basePathUrl;
         const domainAndBasePathUrl = mapping.domainAndBasePathUrl;
+        const basePathMetadata = {
+          stage: mapping.stage,
+          restApiId: mapping.restApiId,
+        };
         nodes.set(domainAndBasePathUrl, {
           id: domainAndBasePathUrl,
           label: basePathUrl,
           group: Group.BasePath,
+          metadata: basePathMetadata,
+          consoleUrl: this.generateConsoleUrl(Group.BasePath, domainName),
         });
-        const restApi = inventory.apigApisById.get(mapping.restApiId!);
-        if (restApi?.routes) {
-          for (const resource of restApi.routes) {
+        const api = inventory.apigApisById.get(mapping.restApiId!);
+        if (api?.routes) {
+          for (const resource of api.routes) {
             const domainAndFullPathUrl = `${domainAndBasePathUrl}/${resource.routeKey}`;
+            const routeMetadata: any = { ...resource, restApiId: mapping.restApiId };
+            delete routeMetadata.integrations; // too large for table
             nodes.set(domainAndFullPathUrl, {
               id: domainAndFullPathUrl,
               label: resource.routeKey,
               group: Group.Route,
+              metadata: routeMetadata,
+              consoleUrl: this.generateConsoleUrl(Group.Route, domainAndFullPathUrl, undefined, routeMetadata),
             });
           }
         }
@@ -223,7 +240,7 @@ export class Generator {
     return nodes;
   }
 
-  generateConsoleUrl(group: Group, arn: string, resourceId?: string): string | undefined {
+  generateConsoleUrl(group: Group, arn: string, resourceId?: string, metadata?: any): string | undefined {
     const region = this.context.awsOptions.region;
     switch (group) {
       case Group.LambdaFunction: {
@@ -241,8 +258,18 @@ export class Generator {
       case Group.DynamoDbTable: {
         return `https://${region}.console.aws.amazon.com/dynamodbv2/home?region=${region}#tables:selected=${resourceId};tab=overview`;
       }
-      case Group.DomainName: {
+      case Group.DomainName:
+      case Group.BasePath: {
         return `https://${region}.console.aws.amazon.com/apigateway/main/publish/domain-names?region=${region}`;
+      }
+      case Group.Route: {
+        if (metadata?.id && metadata?.restApiId) { // REST API (v1)
+          return `https://${region}.console.aws.amazon.com/apigateway/home?region=${region}#/apis/${metadata.restApiId}/resources/${metadata.id}`;
+        }
+        if (metadata?.ApiId) { // HTTP API (v2)
+          return `https://${region}.console.aws.amazon.com/apigateway/main/develop/apis/${metadata.ApiId}/routes?region=${region}`;
+        }
+        return undefined;
       }
       default: {
         return undefined;
