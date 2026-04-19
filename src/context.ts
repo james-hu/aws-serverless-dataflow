@@ -23,12 +23,19 @@ type DynamoDbTableDetails = {
 type SnsTopicDetails = Record<string, string> & {
   subscriptions: Array<Required<Subscription> & Record<string, string>>;
   TopicArn: string;
+  DisplayName: string;
+  SubscriptionsConfirmed: number;
+  SubscriptionsDeleted: number;
+  SubscriptionsPending: number;
 };
 type SqsQueueDetails = Record<string, string> & {
   subscriptions: Array<Required<Subscription> & Record<string, string>>;
   QueueUrl: string;
   QueueArn: string;
   RedrivePolicy: string;
+  DelaySeconds: number;
+  MaximumMessageSize: number;
+  VisibilityTimeout: number;
 };
 
 export type ApiGatewayApiDetails = (RestApi | Api) & {
