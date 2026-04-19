@@ -350,6 +350,9 @@
         .indent-2 {
             padding-left: 4rem !important;
         }
+
+        th.sort-asc::after { content: ' \2191'; font-size: 0.75rem; color: var(--primary-color); }
+        th.sort-desc::after { content: ' \2193'; font-size: 0.75rem; color: var(--primary-color); }
     </style>
 </head>
 
@@ -553,8 +556,17 @@
         }
 
         function sortTable(n) {
-            if (sortColumn === n) sortAsc = !sortAsc;
-            else { sortColumn = n; sortAsc = true; }
+            if (sortColumn === n) {
+                if (sortAsc) {
+                    sortAsc = false;
+                } else {
+                    sortColumn = -1;
+                    sortAsc = true;
+                }
+            } else {
+                sortColumn = n;
+                sortAsc = true;
+            }
             renderTable();
         }
 
@@ -572,6 +584,15 @@
             const body = document.getElementById('resourceTableBody');
             if (!body) return;
             const filteredNodes = nodesView.get();
+
+            // Update header indicators
+            const headers = document.querySelectorAll('thead th');
+            headers.forEach((th, i) => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (i === sortColumn) {
+                    th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+                }
+            });
 
             if (sortColumn >= 0) {
                 filteredNodes.sort((a, b) => {
