@@ -141,6 +141,7 @@ export class Generator {
           QueueUrl: queue.QueueUrl,
           DelaySeconds: queue.DelaySeconds,
           MaximumMessageSize: queue.MaximumMessageSize,
+          VisibilityTimeout: queue.VisibilityTimeout,
         },
       });
     }
@@ -159,6 +160,19 @@ export class Generator {
           Timeout: lambda.Timeout,
           MemorySize: lambda.MemorySize,
           LastModified: lambda.LastModified,
+        },
+      });
+    }
+
+    // DynamoDB Tables
+    for (const table of inventory.dynamoDbTablesByArn.values()) {
+      nodes.set(table.arn, {
+        id: table.arn,
+        label: table.TableName,
+        group: Group.DynamoDbTable,
+        consoleUrl: this.generateConsoleUrl(Group.DynamoDbTable, table.arn, table.TableName),
+        metadata: {
+          TableName: table.TableName,
         },
       });
     }
