@@ -12,10 +12,10 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
-        node-version-file: package.json
+        node-version-file: .nvmrc
         cache: 'npm'
         cache-dependency-path: |
           package.json
@@ -33,7 +33,7 @@ jobs:
     - name: Build executable files
       run: npm run pkg
     - name: Cache executable files built
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v5
       with:
         path: pkg
         key: ${{ github.run_id }}-${{ github.run_number }}
@@ -46,24 +46,25 @@ jobs:
           sudo snap install --classic snapcraft
           mkdir -p $HOME/.cache/snapcraft/download
           mkdir -p $HOME/.cache/snapcraft/stage-packages
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - run: git fetch --force --tags
       - name: Restore cached executable files previously built
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v5
         with:
           path: pkg
           key: ${{ github.run_id }}-${{ github.run_number }}
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v6
         with:
           go-version: '>=1.19.3'
           cache: false
-      - uses: goreleaser/goreleaser-action@v4
+      - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GORELEASER_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}

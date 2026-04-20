@@ -1,3 +1,4 @@
+version: 2
 builds:
   -
     targets:
@@ -22,12 +23,12 @@ builds:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 release:  # to GitHub releases
   skip_upload: false
 
-brews:  # push to github.com/handy-common-utils/homebrew-tap
+homebrew_casks:  # push to github.com/handy-common-utils/homebrew-tap
   -
     # NOTE: make sure the url_template, the token and given repo (github or
     # gitlab) owner and name are from the same kind.
@@ -38,19 +39,17 @@ brews:  # push to github.com/handy-common-utils/homebrew-tap
     repository:
       owner: handy-common-utils
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
 
     # Template for the url which is determined by the given Token (github,
     # gitlab or gitea)
     #
     # Default depends on the client.
-    url_template: "https://github.com/james-hu/aws-serverless-dataflow/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url:
+      template: "https://github.com/james-hu/aws-serverless-dataflow/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
     # The project name and current git tag are used in the format string.
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
-
-    # Folder inside the repository to put the formula.
-    # Default is the root folder.
-    folder: Formula
+    commit_msg_template: "Brew cask update for {{ .ProjectName }} version {{ .Tag }}"
 
     # Your app's homepage.
     # Default is empty.
@@ -83,7 +82,7 @@ snapcrafts:
     # Defaults to false.
     publish: true
 
-    summary: A command-line tool for visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow
+    summary: Visualise AWS serverless (Lambda, API Gateway, SNS, SQS...) dataflow via CLI
     description: For more information, see https://github.com/james-hu/aws-serverless-dataflow
 
     grade: stable
