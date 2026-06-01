@@ -1,12 +1,13 @@
 /* eslint-disable unicorn/prefer-node-protocol */
 /* eslint-disable unicorn/import-style */
-/* eslint-disable complexity */
-import { promisify } from 'util';
+ 
+import { AwsUtils } from '@handy-common-utils/aws-utils';
 import * as fs from 'fs-extra';
-import * as path from 'path';
 import jsStringEscape from 'js-string-escape';
 import ncp from 'ncp';
-import { AwsUtils } from '@handy-common-utils/aws-utils';
+import * as path from 'path';
+import { promisify } from 'util';
+
 import { Context } from './context';
 
 interface Node {

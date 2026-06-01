@@ -1,3 +1,3 @@
 import buildIncludeExcludeMatcher from './matcher';
 
-(global as any).buildIncludeExcludeMatcher = buildIncludeExcludeMatcher;
+(globalThis as any).buildIncludeExcludeMatcher = buildIncludeExcludeMatcher;

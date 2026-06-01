@@ -1,15 +1,17 @@
+import { CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
+import { PromiseUtils } from '@handy-common-utils/promise-utils';
 import { Command, Flags } from '@oclif/core';
+
 import { Context } from './context';
 import { Generator } from './generator';
 import { LocalServer } from './local-server';
 import { Surveyor } from './surveyor';
-import { PromiseUtils } from '@handy-common-utils/promise-utils';
-import { CommandOptions, OclifUtils } from '@handy-common-utils/oclif-utils';
+
 class AwsServerlessDataflow extends Command {
   static Options: CommandOptions<typeof AwsServerlessDataflow>;  // just to hold the type
   static description = 'Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow\n' +
     `This command line tool can visualise AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) dataflow. 
-It generates website files locally and can optionally launch a local server for you to preview.`.replace(/\n/g, '') +
+It generates website files locally and can optionally launch a local server for you to preview.`.replaceAll('\n', '') +
 `\n\nBefore running this tool, you need to log into your AWS account (through command line like aws, saml2aws, okta-aws, etc.) first. 
 \nThis tool is free and open source: https://github.com/james-hu/aws-serverless-dataflow`;
 
@@ -42,10 +44,10 @@ It generates website files locally and can optionally launch a local server for 
 
   static examples = [
     '^ -r ap-southeast-2 -s',
-    `^ -r ap-southeast-2 -s -i '*boi*' -i '*datahub*' \\
+    String.raw`^ -r ap-southeast-2 -s -i '*boi*' -i '*datahub*' \
       -x '*jameshu*' -c`,
-    `^ -r ap-southeast-2 -s -i '*lr-*' \\
-      -i '*lead*' -x '*slack*' -x '*lead-prioritization*' \\
+    String.raw`^ -r ap-southeast-2 -s -i '*lr-*' \
+      -i '*lead*' -x '*slack*' -x '*lead-prioritization*' \
       -x '*lead-scor*' -x '*LeadCapture*' -c`,
   ];
 

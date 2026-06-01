@@ -1,8 +1,9 @@
 spec:
-  - 'test/**/*.test.ts'
+  - 'test/**/*.spec.ts'
 exclude:
   - '**/node_modules/**'
 require:
   - source-map-support/register
-  - ts-node/register
+node-option:
+  - import=tsx
 
