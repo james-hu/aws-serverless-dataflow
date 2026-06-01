@@ -33,7 +33,7 @@
     "vis-network": "^9.1.2"
   },
   "devDependencies": {
-    "@handy-common-utils/dev-dependencies-mocha": "^1.11.12",
+    "@handy-common-utils/dev-dependencies-mocha": "^1.11.13",
     "@oclif/test": "^2.1.0",
     "@types/fs-extra": "^8.1.2",
     "@types/js-string-escape": "^1.0.0",

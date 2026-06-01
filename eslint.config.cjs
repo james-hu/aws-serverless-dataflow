@@ -8,11 +8,4 @@ module.exports = defineConfig([
     ignores: ['lib', 'site/js/browser-utils.js', 'bin', 'coverage', 'api-docs', 'dataflow'],
   },
   ...config,
-  // Disable no-undef rule for TypeScript files
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    rules: {
-      'no-undef': 'off',
-    },
-  },
 ]);
