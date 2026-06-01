@@ -8,16 +8,24 @@ Visualisation of AWS serverless (Lambda, API Gateway, SNS, SQS, etc.) components
 [![Downloads/week](https://img.shields.io/npm/dw/aws-serverless-dataflow.svg)](https://npmjs.org/package/aws-serverless-dataflow)
 [![License](https://img.shields.io/npm/l/aws-serverless-dataflow.svg)](https://github.com/james-hu/aws-serverless-dataflow/blob/master/package.json)
 
-_aws-serverless-dataflow_ is a command line tool that can help you visualize the connections and dataflow among various AWS serverless components, such as AWS Lambda, API Gateway, SNS, SQS, etc. The tool surveys the serverless components in your AWS account, and then generates static website content that can be hosted on a website for viewing the diagrams.
+_aws-serverless-dataflow_ is a command line tool that can help you visualize the connections and dataflow among various AWS serverless components. The tool surveys the serverless components in your AWS account, and then generates static website content that can be hosted on a website for viewing the diagrams.
 
-The generated visual representation can help you to understand the architecture and data flow of their serverless application, and identify any issues or opportunities for optimization. 
+The generated visual representation can help you to understand the architecture and data flow of your serverless application, and identify any issues or opportunities for optimization.
+
+### Supported AWS Resources
+- **API Gateway**: REST APIs, HTTP APIs, Custom Domains, and Base Path Mappings.
+- **AWS Lambda**: Functions and Event Source Mappings.
+- **SQS**: Queues.
+- **SNS**: Topics and Subscriptions.
+- **S3**: Buckets and Notification Configurations.
+- **DynamoDB**: Tables (surveyed via Lambda Event Source Mappings).
+- **CloudFormation**: Optional clustering of resources by stack association.
 
 ## Quick start
 
-_aws-serverless-dataflow_ can be installed through Homebrew (`brew install handy-common-utils/tap/aws-serverless-dataflow` for Linux or MacOS),
-[snap](https://snapcraft.io/aws-serverless-dataflow) (`snap install aws-serverless-dataflow` for Linux except WSL), npm (`npm i -g aws-serverless-dataflow` for any system with Node.js installed), or manual download (https://github.com/james-hu/aws-serverless-dataflow/releases for Windows, Linux, and MacOS ). It can also be executed without installation through npx (`npx aws-serverless-dataflow` for any system with Node.js installed).
+_aws-serverless-dataflow_ can be installed through Homebrew (`brew install handy-common-utils/tap/aws-serverless-dataflow` for Linux or MacOS), [snap](https://snapcraft.io/aws-serverless-dataflow) (`snap install aws-serverless-dataflow` for Linux except WSL), npm (`npm i -g aws-serverless-dataflow` for any system with Node.js 20+ installed), or manual download (https://github.com/james-hu/aws-serverless-dataflow/releases for Windows, Linux, and MacOS). It can also be executed without installation through npx (`npx aws-serverless-dataflow` for any system with Node.js 20+ installed).
 
-Before running it, you need to log into your AWS account [through command line](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html) first.
+Before running it, you need to log into your AWS account through the command line (e.g. via `aws configure`, `saml2aws`, etc.). The tool respects standard AWS environment variables (`AWS_PROFILE`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`).
 
 Then, you can try something like this:
 
@@ -138,7 +146,7 @@ EXAMPLES
 Development:
 
 - Run for test: `./bin/run ...`
-- Release: `npm version patch -m "..." && npm publish`
+- Release: Bump the version and tag (e.g., `npm version patch -m "..."`) and push the tags to GitHub (`git push --follow-tags`). The GitHub Actions release workflow will automatically run tests, compile native executables, create a GitHub Release, update the Homebrew/Snapcraft taps, and publish the package to the npm registry.
 
 Please ignore `main.go` and `go.mod` files.
 They exist only because we are using *goreleaser*.

@@ -33,19 +33,19 @@
     "vis-network": "^9.1.2"
   },
   "devDependencies": {
-    "@handy-common-utils/dev-dependencies-mocha": "^1.3.0",
+    "@handy-common-utils/dev-dependencies-mocha": "^1.11.12",
     "@oclif/test": "^2.1.0",
     "@types/fs-extra": "^8.1.2",
     "@types/js-string-escape": "^1.0.0",
     "@types/luxon": "^2.0.7",
     "@types/matcher": "^2.0.0",
     "@types/ncp": "^2.0.5",
-    "browserify": "^17.0.0",
-    "oclif": "^3.0.1",
-    "pkg": "^5.8.0"
+    "@yao-pkg/pkg": "^6.20.0",
+    "browserify": "^17.0.1",
+    "oclif": "^3.0.1"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=20.0.0"
   },
   "files": [
     "/bin",
@@ -80,11 +80,11 @@
     ],
     "outputPath": "pkg",
     "targets": [
-      "node16-macos-x64",
-      "node16-macos-arm64",
-      "node16-linux-x64",
-      "node16-linux-arm64",
-      "node16-win-x64"
+      "node22-macos-x64",
+      "node22-macos-arm64",
+      "node22-linux-x64",
+      "node22-linux-arm64",
+      "node22-win-x64"
     ]
   },
   "oclif": {
@@ -103,9 +103,9 @@
   "repository": "james-hu/aws-serverless-dataflow",
   "scripts": {
     "pretest": "eslint . --ext .ts",
-    "test": "nyc mocha",
+    "test": "c8 mocha",
     "prepare": "shx rm -rf dist lib && tsc && browserify lib/browser-utils.js -o site/js/browser-utils.js",
-    "pkg": "npm run prepare && pkg --compress GZip .",
+    "pkg": "npm run prepare && pkg --sea --fallback-to-source --compress GZip .",
     "preversion": "./bin/run --update-readme.md && git add README.md"
   },
   "types": "lib/index.d.ts"
