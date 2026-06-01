@@ -5,7 +5,14 @@ const config = buildESLintConfig({ defaultSourceType: 'commonjs' });
 
 module.exports = defineConfig([
   {
-    ignores: ['lib', 'coverage', 'api-docs', 'dataflow'],
+    ignores: ['lib', 'site/js/browser-utils.js', 'bin', 'coverage', 'api-docs', 'dataflow'],
   },
   ...config,
+  // Disable no-undef rule for TypeScript files
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
 ]);

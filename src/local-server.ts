@@ -1,5 +1,6 @@
-import { Context } from './context';
 import open from 'open';
+
+import { Context } from './context';
 
 export class LocalServer {
   protected server: any;
@@ -8,7 +9,7 @@ export class LocalServer {
   constructor(private context: Context) {
     const port = this.context.options.flags.port;
     this.url = `http://localhost:${port}/`;
-    // eslint-disable-next-line unicorn/prefer-module
+    // eslint-disable-next-line unicorn/prefer-module, @typescript-eslint/no-require-imports
     const rserver = require('really-simple-http-server');
     this.server = rserver({
       path: context.options.args.path,

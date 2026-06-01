@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { Generator } from '../src/generator';
 
 describe('Generate', () => {

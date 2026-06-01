@@ -1,10 +1,12 @@
-import { DomainName, BasePathMapping, RestApi, Resource, Integration } from '@aws-sdk/client-api-gateway';
-import { Api, Route, Integration as IntegrationV2 } from '@aws-sdk/client-apigatewayv2';
-import { StackSummary, StackResourceSummary } from '@aws-sdk/client-cloudformation';
-import { FunctionConfiguration, EventSourceMappingConfiguration } from '@aws-sdk/client-lambda';
+import { BasePathMapping, DomainName, Integration, Resource, RestApi } from '@aws-sdk/client-api-gateway';
+import { Api, Integration as IntegrationV2, Route } from '@aws-sdk/client-apigatewayv2';
+import { StackResourceSummary, StackSummary } from '@aws-sdk/client-cloudformation';
+import { EventSourceMappingConfiguration, FunctionConfiguration } from '@aws-sdk/client-lambda';
 import { Bucket, NotificationConfiguration } from '@aws-sdk/client-s3';
 import { Subscription } from '@aws-sdk/client-sns';
 import { CliUx } from '@oclif/core';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import AwsServerlessDataflow = require('.');
 
 export type S3BucketDetails = Bucket & {
@@ -21,7 +23,7 @@ type DynamoDbTableDetails = {
   TableName: string;
 };
 type SnsTopicDetails = Record<string, string> & {
-  subscriptions: Array<Required<Subscription> & Record<string, string>>;
+  subscriptions: Array<Record<string, string> & Required<Subscription>>;
   TopicArn: string;
   DisplayName: string;
   SubscriptionsConfirmed: number;
@@ -29,7 +31,7 @@ type SnsTopicDetails = Record<string, string> & {
   SubscriptionsPending: number;
 };
 type SqsQueueDetails = Record<string, string> & {
-  subscriptions: Array<Required<Subscription> & Record<string, string>>;
+  subscriptions: Array<Record<string, string> & Required<Subscription>>;
   QueueUrl: string;
   QueueArn: string;
   RedrivePolicy: string;
@@ -70,7 +72,7 @@ export class Context {
       }>;
     }>(),
     snsTopicsByArn: new Map<string, SnsTopicDetails>(),
-    snsSubscriptionsByArn: new Map<string, Required<Subscription> & Record<string, string>>(),
+    snsSubscriptionsByArn: new Map<string, Record<string, string> & Required<Subscription>>(),
     sqsQueuesByUrl: new Map<string, SqsQueueDetails>(),
     sqsQueuesByArn: new Map<string, SqsQueueDetails>(),
     s3BucketsByArn: new Map<string, S3BucketDetails>(),
